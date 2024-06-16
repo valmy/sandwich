@@ -1,5 +1,14 @@
 import requests
 import json
+import time
+
+def make_request(url, max_retries=5):
+    for i in range(max_retries):
+        response = requests.get(url)
+        if response.status_code != 429:
+            return response
+        time.sleep(2 ** i)
+    return None  # or raise an exception
 
 def download_file(url, file_path):
     """
@@ -16,7 +25,7 @@ def download_file(url, file_path):
         None
     """
     # Make a request to the URL
-    response = requests.get(url)
+    response = make_request(url)
 
     # Check if the request was successful
     if response.status_code == 200:
@@ -47,7 +56,7 @@ def save_market_data(file_name='marketcap.json'):
         page_url = f'{url}&page=1'
         print(page_url)
         # Make a request to the URL
-        response = requests.get(page_url)
+        response = make_request(page_url)
 
         # Check if the request was successful
         if response.status_code == 200:
@@ -69,6 +78,24 @@ def remove_prefix_suffix(s):
         s = s.replace('BINANCE:', '', 1)
         s = s[:-4]
     return s
+
+def find_symbol_in_lines(item, lines):
+    """
+    Finds the symbol in the list of lines.
+
+    Args:
+        item (str): The symbol data to find.
+        lines (list): A list of strings.
+
+    Returns:
+        str: The line containing the symbol, or an empty string if the symbol is not found.
+    """
+    for line in lines:
+        symbol = item["symbol"].upper() + 'USDT'
+        symbol_in_line = remove_prefix_suffix(line)
+        if symbol != 'USDCUSDT' and (symbol == symbol_in_line or ('1000' + symbol) == symbol_in_line):
+            return line
+    return ''
 
 def sort_market_data(json_file='marketcap.json', txt_file='usdt_perp_futures.txt', sorted_file='sorted_usdt_perp.txt'):
     """
@@ -97,15 +124,20 @@ def sort_market_data(json_file='marketcap.json', txt_file='usdt_perp_futures.txt
             lines = data.splitlines()
 
             sorted_data = ''
-            for i in mcap:
-                print(f'{i["symbol"]} - {i["market_cap_rank"]}')
-                for line in lines:
-                    
-                    symbol = i["symbol"].upper() + 'USDT'
-                    symbol_in_line = remove_prefix_suffix(line)
-                    if symbol != 'USDCUSDT' and (symbol == symbol_in_line or ('1000' + symbol) == symbol_in_line):
-                        sorted_data += line + '\n'
-                        break
+            # Sort market data by total_volume descending
+            mcap_sorted = sorted(mcap, key=lambda x: x["total_volume"], reverse=True)
+
+            for i in mcap_sorted:
+                if type(i["total_volume"]) != int:
+                    total_volume = int(i["total_volume"])
+                else:
+                    total_volume = i["total_volume"]
+                print(f'{i["symbol"]} - {i["market_cap_rank"]} - {total_volume}')
+
+                # find the symbol in the list of lines
+                line = find_symbol_in_lines(i, lines)
+                if line:
+                    sorted_data += line + '\n'
 
             # write the sorted data back to a new file
             with open(sorted_file, 'w') as h:

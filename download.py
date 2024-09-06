@@ -51,18 +51,27 @@ def save_market_data(file_name='marketcap.json'):
     url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=250'
 
     # Save the response body to a file
-    with open(file_name, 'wb') as f:
-        # Page url:
-        page_url = f'{url}&page=1'
-        print(page_url)
-        # Make a request to the URL
-        response = make_request(page_url)
+    with open(file_name, 'w') as f:
+        all_data = []
+        for page in range(1, 3):  # Get 2 pages
+            # Page url:
+            page_url = f'{url}&page={page}'
+            print(page_url)
+            # Make a request to the URL
+            response = make_request(page_url)
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            f.write(response.content)
-        else:
-            print("Request failed with status code:", response.status_code)
+            # Check if the request was successful
+            if response.status_code == 200:
+                data = response.json()
+                all_data.extend(data)
+            else:
+                print(f"Request failed for page {page} with status code:", response.status_code)
+                return
+
+        # count and print the number of items in the list
+        print(f"Number of items in the list: {len(all_data)}")
+        # json.dump(all_data, f)
+    print(f"Market data saved successfully to {file_name}")
 
 def remove_prefix_suffix(s):
     """
@@ -115,7 +124,7 @@ def sort_market_data(json_file='marketcap.json', txt_file='usdt_perp_futures.txt
         # read file
         data = f.read()
         # parse file
-        mcap = json.loads(data)[0:250]
+        mcap = json.loads(data)[0:500]
 
         # open txt file
         with open(txt_file, 'r') as g:
@@ -128,10 +137,7 @@ def sort_market_data(json_file='marketcap.json', txt_file='usdt_perp_futures.txt
             mcap_sorted = sorted(mcap, key=lambda x: x["total_volume"], reverse=True)
 
             for i in mcap_sorted:
-                if type(i["total_volume"]) != int:
-                    total_volume = int(i["total_volume"])
-                else:
-                    total_volume = i["total_volume"]
+                total_volume = int(i["total_volume"]) if isinstance(i["total_volume"], (float, str)) else i["total_volume"]
                 print(f'{i["symbol"]} - {i["market_cap_rank"]} - {total_volume}')
 
                 # find the symbol in the list of lines
@@ -144,9 +150,9 @@ def sort_market_data(json_file='marketcap.json', txt_file='usdt_perp_futures.txt
                 h.write(sorted_data)
 
 url = 'https://sandwichfinance.blob.core.windows.net/files/binancefuturesf_usdt_perpetual_futures.txt'
-file_path = 'usdt_perp_futures.txt'
+file_path = 'usdt_perp_pairs.txt'
 
-download_file(url, file_path)
+# download_file(url, file_path)
 
 save_market_data()
 

@@ -70,7 +70,7 @@ def save_market_data(file_name='marketcap.json'):
 
         # count and print the number of items in the list
         print(f"Number of items in the list: {len(all_data)}")
-        # json.dump(all_data, f)
+        json.dump(all_data, f)
     print(f"Market data saved successfully to {file_name}")
 
 def remove_prefix_suffix(s):
@@ -149,11 +149,8 @@ def sort_market_data(json_file='marketcap.json', txt_file='usdt_perp_futures.txt
             with open(sorted_file, 'w') as h:
                 h.write(sorted_data)
 
-url = 'https://sandwichfinance.blob.core.windows.net/files/binancefuturesf_usdt_perpetual_futures.txt'
-file_path = 'usdt_perp_pairs.txt'
-
 # download_file(url, file_path)
 
-save_market_data()
+# save_market_data()
 
-sort_market_data()
+# sort_market_data()

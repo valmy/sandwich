@@ -1,6 +1,6 @@
 [project]
 name = "sandwich"
-version = "0.1.0"
+version = "0.1.3"
 description = "Add your description here"
 authors = [
     { name = "T. Budiman", email = "tbudiman@gmail.com" }
@@ -8,12 +8,13 @@ authors = [
 dependencies = [
     "requests>=2.32.3",
     "ccxt>=4.3.98",
+    "typer>=0.12.5",
 ]
 readme = "README.md"
 requires-python = ">= 3.12"
 
 [project.scripts]
-sandwich = "sandwich:main"
+sandwich = "sandwich:app"
 
 [build-system]
 requires = ["hatchling"]

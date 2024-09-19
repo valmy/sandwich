@@ -1,7 +1,27 @@
-from .download import save_market_data, sort_market_data
+import typer
+from .coingecko.markets import save_market_data
+from .binance.pairs import get_and_save_pairs
+from .download import sort_market_data
 
-def main() -> str:
-    save_market_data()
-    sort_market_data()
-    return "Completed"
+app = typer.Typer()
 
+@app.command()
+def main(base: str = 'usdtperp', fetch: bool = False, get_pairs: bool = False):
+    if base.lower().endswith('perp'):
+        base_currency = base[:-4].upper()
+        market_type = 'swap'
+    else:
+        base_currency = base.upper()
+        market_type = 'spot'
+
+    if fetch:
+        save_market_data()
+
+    if get_pairs:
+        get_and_save_pairs(base_currency, market_type)
+
+    # sort_market_data()
+    print(f"Completed: {base} Fetch:  {fetch} Get Pairs: {get_pairs}")
+
+if __name__ == "__main__":
+    app()

@@ -1,6 +1,6 @@
 import ccxt
 
-def get_pairs(base_currency: str = 'USDT', type = 'swap'):
+def get_pairs(base_currency: str = 'USDT', type='swap'):
     """
     Retrieves perpetual pairs for a specific base currency from Binance using the ccxt library.
 
@@ -51,15 +51,23 @@ def get_and_save_pairs(base_currency = 'USDT', type = 'swap'):
 
     Args:
         base_currency (str): The base currency to process (e.g., 'USDT', 'USDC', 'FDUSD').
+        type (str): The type of pairs to retrieve ('swap' for perpetual pairs or 'spot' for spot pairs).
 
     Returns:
         None
     """
     print(f"Getting {base_currency} {type} pairs...")
     pairs = get_pairs(base_currency, type)
-    print(f"{base_currency} {type} pairs: {pairs}")
+    print(f"{base_currency} {type} pairs: {len(pairs)} found")
     save_pairs_for_tradingview(pairs, base_currency, type)
 
 # Example usage
 if __name__ == "__main__":
-    get_and_save_pairs('USDC', 'spot')
+    # Get and save USDT perpetual pairs
+    get_and_save_pairs('USDT', 'swap')
+
+    # Get and save USDC spot pairs
+    # get_and_save_pairs('USDC', 'spot')
+
+    # Get and save FDUSD perpetual pairs
+    # get_and_save_pairs('FDUSD', 'swap')

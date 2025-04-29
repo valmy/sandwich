@@ -28,27 +28,36 @@ def find_symbol_in_lines(item, lines, base_currency='USDT'):
     Returns:
         str: The line containing the symbol, or an empty string if the symbol is not found.
     """
+    excluded_currencies = ['USDC', 'FDUSD', 'EUR']
     for line in lines:
         symbol = item["symbol"].upper() + base_currency
         symbol_in_line = remove_prefix_suffix(line)
-        if symbol != f'USDC{base_currency}' and (symbol == symbol_in_line or ('1000' + symbol) == symbol_in_line):
+        if not any(symbol == f'{curr}{base_currency}' for curr in excluded_currencies) and (symbol == symbol_in_line or ('1000' + symbol) == symbol_in_line):
             return line
     return ''
 
-def sort_market_data(base_currency, market_type):
+def sort_market_data(base_currency, market_type, is_hyperliquid=False):
     """
     Sorts market data based on symbol and market cap rank.
 
     Args:
+        base_currency (str): The base currency to use (e.g., 'USDT', 'USDC').
+        market_type (str): The type of market ('swap' or 'spot').
+        is_hyperliquid (bool): Whether to sort Hyperliquid pairs data.
 
     Returns:
         None
     """
-    # Rest of the code...
     # open json file
     json_file = 'marketcap.json'
-    txt_file = f'{base_currency.lower()}_{market_type}_pairs.txt'
-    sorted_file = f'sorted_{base_currency.lower()}_{market_type}.txt'
+
+    # Determine file names based on whether we're sorting Hyperliquid pairs
+    if is_hyperliquid:
+        txt_file = f'{base_currency.lower()}_{market_type}_hype_pairs.txt'
+        sorted_file = f'sorted_{base_currency.lower()}_{market_type}_hype.txt'
+    else:
+        txt_file = f'{base_currency.lower()}_{market_type}_pairs.txt'
+        sorted_file = f'sorted_{base_currency.lower()}_{market_type}.txt'
 
     with open(json_file, 'r') as f:
         # read file

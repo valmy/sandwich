@@ -77,8 +77,8 @@ def sort_market_data(base_currency, market_type, is_hyperliquid=False):
 
             sorted_symbols = set()
             for i in mcap_sorted:
-                total_volume = int(i["total_volume"]) if isinstance(i["total_volume"], (float, str)) else i["total_volume"]
-                print(f'{i["symbol"]} - {i["market_cap_rank"]} - {total_volume}')
+                # total_volume = int(i["total_volume"]) if isinstance(i["total_volume"], (float, str)) else i["total_volume"]
+                # print(f'{i["symbol"]} - {i["market_cap_rank"]} - {total_volume}')
 
                 # find the symbol in the list of lines
                 line = find_symbol_in_lines(i, lines, base_currency)

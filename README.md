@@ -3,18 +3,37 @@ It also fetches volume data from coingecko and then sorted the lists
 
 ## Usage
 
- Usage: rye run sandwich [OPTIONS]
+Usage: rye run sandwich [OPTIONS]
 
- Options:
-  --base  TEXT  [default usdtperp]                 Base currency (usdtperp|usdc|fdusd)
-  --fetch  or  --no-fetch [default: no-fetch]      Get volume data from coingecko
-  --get-pairs or --no-get-pairs  [default: no-get-pairs]  Get pair data from Binance
+Options:
+  --base TEXT          Base currency/type [default: usdtperp]
+                       Options include: usdtperp, usdc, fdusd
+                       Note: Adding 'perp' suffix will use 'swap' market type
 
-Example:
-```
+  --fetch/--no-fetch   [default: no-fetch]
+                       Get volume data from CoinGecko
+
+  --get-pairs/--no-get-pairs  [default: no-get-pairs]
+                       Get pair data from Binance
+
+  --hyperliquid/--no-hyperliquid  [default: no-hyperliquid]
+                       Use Hyperliquid exchange data instead of Binance
+
+### Examples:
+
+```bash
+# Fetch USDC pairs from Binance and sort with CoinGecko volume data
 rye run sandwich --base usdc --fetch --get-pairs
-```
 
+# Work with USDT perpetual pairs
+rye run sandwich --base usdtperp --get-pairs
+
+# Fetch and process Hyperliquid exchange data
+rye run sandwich --hyperliquid --fetch
+
+# Only sort existing pair data (no fetching)
+rye run sandwich --base fdusd
+```
 
 ## Installation
 

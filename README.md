@@ -3,7 +3,7 @@ It also fetches volume data from coingecko and then sorted the lists
 
 ## Usage
 
-Usage: rye run sandwich [OPTIONS]
+Usage: uv run sandwich [OPTIONS]
 
 Options:
   --base TEXT          Base currency/type [default: usdtperp]
@@ -23,33 +23,33 @@ Options:
 
 ```bash
 # Fetch USDC pairs from Binance and sort with CoinGecko volume data
-rye run sandwich --base usdc --fetch --get-pairs
+uv run sandwich --base usdc --fetch --get-pairs
 
 # Work with USDT perpetual pairs
-rye run sandwich --base usdtperp --get-pairs
+uv run sandwich --base usdtperp --get-pairs
 
 # Fetch and process Hyperliquid exchange data
-rye run sandwich --hyperliquid --fetch
+uv run sandwich --hyperliquid --fetch
 
 # Only sort existing pair data (no fetching)
-rye run sandwich --base fdusd
+uv run sandwich --base fdusd
 ```
 
 ## Installation
 
-To install rye, follow these steps:
+To install uv, follow these steps:
 
-1. Install rye using the official installation script:
+1. Install uv using the official installation script:
 
-curl -sSf https://rye-up.com/get | bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 2. Restart your terminal or run `source ~/.bashrc` (or the appropriate config file) to apply the changes.
 
 3. Verify the installation by running:
 
-rye --version
+uv --version
 
-Now you're ready to use rye with this project.
+Now you're ready to use uv with this project.
 
 ## Contributing
 As experiment using AI to write code:

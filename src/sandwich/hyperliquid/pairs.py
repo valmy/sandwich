@@ -1,6 +1,5 @@
 import ccxt
 import os
-import re
 
 def get_pairs(base_currency='USDC', type='swap'):
     """
@@ -127,7 +126,7 @@ def match_with_binance_pairs(hyperliquid_pairs, binance_base_currency='USDT', ty
     # Always load Binance pairs with USDT base currency
     binance_pairs = load_pairs_from_file(binance_base_currency, type)
     if not binance_pairs:
-        print(f"No pairs found in file, fetching from Binance API instead...")
+        print("No pairs found in file, fetching from Binance API instead...")
         binance_pairs = get_ccxt_pairs('binance', binance_base_currency, type)
 
     # Match Hyperliquid pairs with Binance pairs (ignoring the base currency difference)

@@ -1,0 +1,47 @@
+import time
+import requests
+from typing import Optional
+
+from sandwich.infrastructure.config import Settings
+from sandwich.infrastructure.logging import get_logger
+from sandwich.domain.exceptions import APIRequestError
+
+logger = get_logger(__name__)
+
+
+class BaseAPIClient:
+    """Base API client with retry logic"""
+
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+
+    def make_request(self, url: str) -> Optional[requests.Response]:
+        """
+        Make HTTP request with exponential backoff retry logic.
+
+        Args:
+            url: URL to request
+
+        Returns:
+            Response object or None if max retries exhausted
+        """
+        for attempt in range(self.settings.max_retries):
+            try:
+                response = requests.get(url)
+                if response.status_code != 429:
+                    return response
+
+                logger.warning(
+                    f"Rate limited (429) on attempt {attempt + 1}, "
+                    f"retrying in {2**attempt}s"
+                )
+                time.sleep(2**attempt)
+            except requests.RequestException as e:
+                logger.error(f"Request failed on attempt {attempt + 1}: {e}")
+                if attempt == self.settings.max_retries - 1:
+                    raise APIRequestError(
+                        f"Request failed after {self.settings.max_retries} attempts: {e}"
+                    )
+
+        logger.error(f"Max retries ({self.settings.max_retries}) exhausted")
+        return None

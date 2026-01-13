@@ -11,10 +11,11 @@ class TestMainCLI:
         from sandwich import main
 
         with (
-            patch("sandwich.save_market_data") as mock_save,
-            patch("sandwich.get_and_save_pairs") as mock_get,
-            patch("sandwich.get_and_save_hyperliquid_pairs") as mock_hl,
-            patch("sandwich.sort_market_data") as mock_sort,
+            patch("sandwich.application.container.DIContainer") as mock_container,
+            patch("sandwich.application.commands.FetchMarketDataCommand"),
+            patch("sandwich.application.commands.FetchPairsCommand"),
+            patch("sandwich.application.commands.MatchPairsCommand"),
+            patch("sandwich.application.commands.SortPairsCommand"),
         ):
             main(base="usdtperp", fetch=False, get_pairs=False, hyperliquid=False)
 
@@ -300,3 +301,42 @@ class TestCLIRunner:
 
             assert "Completed:" in result.stdout
             assert "usdtperp" in result.stdout
+
+    def test_hyperliquid_currency_equivalence(self, tmp_path):
+        """Test that USDC ↔ USDT currency equivalence works when matching"""
+        from pathlib import Path
+        from sandwich.application.container import DIContainer
+        from sandwich.domain.models import ExchangeId, MarketType
+
+        # Create Binance USDT pairs file
+        binance_file = tmp_path / "usdt_swap_pairs.txt"
+        binance_file.write_text(
+            "BINANCE:BTCUSDTPERP\nBINANCE:ETHUSDTPERP\nBINANCE:SOLUSDTPERP\n"
+        )
+
+        # Create Hyperliquid USDC pairs file
+        hl_file = tmp_path / "usdc_swap_pairs.txt"
+        hl_file.write_text(
+            "HYPERLIQUID:BTCUSDCPERP\nHYPERLIQUID:ETHUSDCPERP\nHYPERLIQUID:SOLUSDCPERP\n"
+        )
+
+        # Run matching
+        container = DIContainer(data_dir=tmp_path)
+        match_cmd = container.get_match_pairs_command()
+        result = match_cmd.execute(ExchangeId.BINANCE, "USDT", MarketType.SWAP)
+
+        # Verify that 3 pairs matched (BTC, ETH, SOL)
+        assert len(result) == 3
+        assert "BINANCE:BTCUSDTPERP" in result
+        assert "BINANCE:ETHUSDTPERP" in result
+        assert "BINANCE:SOLUSDTPERP" in result
+
+        # Verify output file exists and has BINANCE prefix
+        hype_file = tmp_path / "usdt_swap_hype_pairs.txt"
+        assert hype_file.exists()
+        content = hype_file.read_text()
+        assert "BINANCE:BTCUSDTPERP" in content
+        assert "BINANCE:ETHUSDTPERP" in content
+        assert "BINANCE:SOLUSDTPERP" in content
+        # Ensure no HYPERLIQUID prefix in output
+        assert "HYPERLIQUID:" not in content

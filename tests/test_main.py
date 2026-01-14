@@ -20,10 +20,8 @@ class TestMainCLI:
             main(base="usdtperp", fetch=False, get_pairs=False, hyperliquid=False)
 
             captured = capsys.readouterr()
-            assert (
-                "Completed: usdtperp Fetch: False Get Pairs: False Hyperliquid: False"
-                in captured.out
-            )
+            # No stdout output expected (relying on logger)
+            assert captured.out == ""
 
     def test_perp_suffix_parsing(self):
         from sandwich import main

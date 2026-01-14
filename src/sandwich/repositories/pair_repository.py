@@ -24,6 +24,18 @@ class PairRepository:
         )
         return self.filesystem.load_pairs(filename)
 
+    def load_pair_lines(self, filename: str) -> List[str]:
+        """
+        Load pairs from file as raw lines.
+
+        Args:
+            filename: Name of file to load from
+
+        Returns:
+            List of raw line strings
+        """
+        return self.filesystem.load_pairs(filename)
+
     def load_ccxt_pairs(self, filename: str) -> List[TradingPair]:
         """
         Load pairs from file and convert to CCXT format.
@@ -106,55 +118,6 @@ class PairRepository:
                     "BINANCE": ExchangeId.BINANCE,
                     "HYPERLIQUID": ExchangeId.HYPERLIQUID,
                     "BYBIT": ExchangeId.BYBIT,
-                    "OKX": ExchangeId.OKX,
-                }
-                exchange_id = exchange_map.get(prefix.upper(), ExchangeId.BINANCE)
-
-                market_type = MarketType.SWAP if is_swap else MarketType.SPOT
-
-                pairs.append(
-                    TradingPair(
-                        symbol=f"{base}/{quote}",
-                        base=base,
-                        quote=quote,
-                        exchange=exchange_id,
-                        market_type=market_type,
-                        is_active=True,
-                    )
-                )
-            except Exception as e:
-                logger.warning(f"Failed to parse line '{line}': {e}")
-                continue
-
-                # Remove exchange prefix if present (e.g., "BINANCE:" -> "")
-                if ":" in symbol:
-                    _, symbol = symbol.split(":", 1)
-                    symbol = symbol.strip()
-
-                # Remove PERP suffix (e.g., "BTCUSDTPERP" -> "BTCUSDT")
-                is_swap = False
-                if symbol.endswith("PERP"):
-                    symbol = symbol.upper()[:-4]
-                    is_swap = True
-
-                # Extract base and quote from symbol
-                base = None
-                quote = None
-                for curr in ["USDT", "USDC", "FDUSD"]:
-                    if symbol.upper().endswith(curr.upper()):
-                        quote = curr
-                        base = symbol.upper()[: -len(curr)]
-                        break
-
-                if base is None or quote is None:
-                    logger.warning(f"Failed to parse base/quote from symbol '{symbol}'")
-                    continue
-
-                # Map prefix to ExchangeId enum
-                exchange_map = {
-                    "BINANCE": ExchangeId.BINANCE,
-                    "HYPERLIQUID": ExchangeId.YPERLIQUID,
-                    "BYBIT": ExchangeId.YBIT,
                     "OKX": ExchangeId.OKX,
                 }
                 exchange_id = exchange_map.get(prefix.upper(), ExchangeId.BINANCE)

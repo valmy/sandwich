@@ -8,7 +8,6 @@ from .exceptions import (
 )
 from .models import MarketType, ExchangeId, TradingPair, MarketData, PairMatchResult
 from .validators import (
-    validate_base_currency,
     validate_market_type,
     validate_exchange_id,
     parse_base_and_market_type,
@@ -27,7 +26,6 @@ __all__ = [
     "TradingPair",
     "MarketData",
     "PairMatchResult",
-    "validate_base_currency",
     "validate_market_type",
     "validate_exchange_id",
     "parse_base_and_market_type",

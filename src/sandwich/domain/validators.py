@@ -2,19 +2,6 @@ from sandwich.domain.exceptions import DataValidationError
 from sandwich.domain.models import MarketType, ExchangeId
 
 
-def validate_base_currency(currency: str) -> str:
-    """Validate and normalize base currency"""
-    if not currency or not isinstance(currency, str):
-        raise DataValidationError(f"Invalid base currency: {currency}")
-
-    base_currency = currency.replace("PERP", "").upper()
-
-    if not base_currency or not base_currency.isalpha():
-        raise DataValidationError(f"Base currency must be alphabetic: {currency}")
-
-    return base_currency
-
-
 def validate_market_type(market_type: str) -> MarketType:
     """Validate market type"""
     try:

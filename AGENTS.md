@@ -35,7 +35,7 @@
 - Include type annotations for all function parameters and return values
 - Use `from typing import Any, Dict, List, Optional, Tuple, Union` when needed
 - Default values don't require explicit type hints if the type is obvious
-- Example: `def get_pairs(base_currency: str = 'USDT', type='swap'):`
+- Example: `def get_pairs(base_currency: str = 'USDT', type: str = 'swap'):`
 
 ### Naming Conventions
 - Use snake_case for functions and variables (e.g., `get_and_save_pairs`, `market_type`)
@@ -54,7 +54,7 @@
   try:
       exchange = ccxt.hyperliquid()
       markets = exchange.load_markets()
-      return pairs
+      return markets
   except Exception as e:
       print(f"Error fetching Hyperliquid data via ccxt: {e}")
       return []
@@ -67,7 +67,7 @@
 - Keep docstrings concise but informative
 - Example:
   ```python
-  def get_pairs(base_currency='USDC', type='swap'):
+  def get_pairs(base_currency: str = 'USDC', type: str = 'swap'):
       """
       Retrieves pairs from Hyperliquid exchange using ccxt.
 

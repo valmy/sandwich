@@ -1,7 +1,6 @@
 from sandwich.infrastructure.api.coingecko import CoinGeckoClient
 from sandwich.infrastructure.api.exchanges import ExchangeClient
 from sandwich.infrastructure.config import Settings
-from sandwich.infrastructure.filesystem import FilesystemOperations
 from sandwich.infrastructure.logging import get_logger
 from sandwich.repositories.pair_repository import PairRepository
 from sandwich.repositories.market_repository import MarketRepository
@@ -90,7 +89,7 @@ class MatchPairsCommand:
 
     def execute(
         self,
-        source_exchange: ExchangeId,
+        target_exchange_id: ExchangeId,
         target_base_currency: str,
         target_market_type: MarketType,
     ) -> list[str]:
@@ -98,7 +97,7 @@ class MatchPairsCommand:
         Match source exchange pairs with target exchange pairs.
 
         Args:
-            source_exchange: Source exchange (e.g., Hyperliquid)
+            target_exchange_id: Target exchange for matching (e.g., Hyperliquid)
             target_base_currency: Target base currency (e.g., USDT)
             target_market_type: Target market type (e.g., SWAP)
 
@@ -106,9 +105,11 @@ class MatchPairsCommand:
             List of matched pair symbols
         """
         try:
-            logger.info(f"Matching {source_exchange.value} pairs against Hyperliquid")
+            logger.info(
+                f"Matching {target_exchange_id.value} pairs against Hyperliquid"
+            )
 
-            if source_exchange == ExchangeId.HYPERLIQUID:
+            if target_exchange_id == ExchangeId.HYPERLIQUID:
                 source_base = "USDC"
                 target_base = target_base_currency
             else:
@@ -130,13 +131,33 @@ class MatchPairsCommand:
             target_pairs_ccxt = self.pair_repository.load_ccxt_pairs(target_filename)
 
             # Override market_type for all pairs to match the target market type
-            for pair in source_pairs_ccxt:
-                pair.market_type = target_market_type
-            for pair in target_pairs_ccxt:
-                pair.market_type = target_market_type
+            from sandwich.domain.models import TradingPair
+
+            source_pairs_ccxt = [
+                TradingPair(
+                    symbol=pair.symbol,
+                    base=pair.base,
+                    quote=pair.quote,
+                    exchange=pair.exchange,
+                    market_type=target_market_type,
+                    is_active=pair.is_active,
+                )
+                for pair in source_pairs_ccxt
+            ]
+            target_pairs_ccxt = [
+                TradingPair(
+                    symbol=pair.symbol,
+                    base=pair.base,
+                    quote=pair.quote,
+                    exchange=pair.exchange,
+                    market_type=target_market_type,
+                    is_active=pair.is_active,
+                )
+                for pair in target_pairs_ccxt
+            ]
 
             # If target doesn't exist (Hyperliquid), fetch it
-            if not target_pairs_ccxt and source_exchange != ExchangeId.HYPERLIQUID:
+            if not target_pairs_ccxt and target_exchange_id != ExchangeId.HYPERLIQUID:
                 fetch_cmd = FetchPairsCommand(
                     ExchangeClient(self.settings, ExchangeId.HYPERLIQUID),
                     self.pair_repository,
@@ -148,7 +169,10 @@ class MatchPairsCommand:
                 )
 
             result = self.pair_matcher.match_pairs(
-                source_pairs_ccxt, target_pairs_ccxt, source_exchange.value, target_base
+                source_pairs_ccxt,
+                target_pairs_ccxt,
+                target_exchange_id.value,
+                target_base,
             )
 
             # Convert matched pairs to TradingView format with BINANCE prefix
@@ -193,12 +217,12 @@ class SortPairsCommand:
         self,
         market_sorter: MarketDataSorter,
         pair_repository: PairRepository,
-        filesystem: FilesystemOperations,
+        market_repository: MarketRepository,
         settings: Settings,
     ) -> None:
         self.market_sorter = market_sorter
         self.pair_repository = pair_repository
-        self.filesystem = filesystem
+        self.market_repository = market_repository
         self.settings = settings
 
     def execute(
@@ -211,12 +235,14 @@ class SortPairsCommand:
                 f"({'hyperliquid' if is_hyperliquid else 'regular'})"
             )
 
-            market_data = self.pair_repository.filesystem.load_market_data()
+            market_data = [
+                m.model_dump() for m in self.market_repository.load_market_data()
+            ]
 
             filename = self.settings.get_pairs_filename(
                 base_currency, market_type, is_hyperliquid
             )
-            pairs_lines = self.pair_repository.filesystem.load_pairs(filename)
+            pairs_lines = self.pair_repository.load_pair_lines(filename)
 
             sorted_data, sorted_count, unsorted_count = (
                 self.market_sorter.sort_pairs_by_volume(
@@ -224,7 +250,7 @@ class SortPairsCommand:
                 )
             )
 
-            self.filesystem.save_sorted_pairs(
+            self.pair_repository.filesystem.save_sorted_pairs(
                 sorted_data, base_currency, market_type, is_hyperliquid
             )
 

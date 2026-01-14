@@ -91,6 +91,6 @@ class DIContainer:
         return SortPairsCommand(
             self.market_sorter,
             self.pair_repository,
-            self.filesystem,
+            self.market_repository,
             self.settings,
         )

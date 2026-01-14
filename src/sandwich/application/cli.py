@@ -1,5 +1,4 @@
 import typer
-from typing import Optional
 
 from .container import DIContainer
 from sandwich.domain.models import ExchangeId
@@ -18,7 +17,6 @@ def main(
     fetch: bool = False,
     get_pairs: bool = False,
     hyperliquid: bool = False,
-    target_base: Optional[str] = None,
 ) -> None:
     """
     Main CLI command.
@@ -28,7 +26,6 @@ def main(
         fetch: Fetch market data from CoinGecko
         get_pairs: Get pairs from exchange
         hyperliquid: Use Hyperliquid exchange
-        target_base: Target base currency for matching (default: same as base)
     """
     try:
         container = DIContainer()
@@ -37,8 +34,7 @@ def main(
 
         logger.info(
             f"Starting: base={base_currency}, type={market_type.value}, "
-            f"fetch={fetch}, get_pairs={get_pairs}, hyperliquid={hyperliquid}, "
-            f"target_base={target_base}"
+            f"fetch={fetch}, get_pairs={get_pairs}, hyperliquid={hyperliquid}"
         )
 
         if fetch:
@@ -69,10 +65,6 @@ def main(
             sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=True)
 
         logger.info(
-            f"Completed: {base} Fetch: {fetch} Get Pairs: {get_pairs} "
-            f"Hyperliquid: {hyperliquid}"
-        )
-        print(
             f"Completed: {base} Fetch: {fetch} Get Pairs: {get_pairs} "
             f"Hyperliquid: {hyperliquid}"
         )

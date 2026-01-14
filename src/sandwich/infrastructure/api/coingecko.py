@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 
 from .base import BaseAPIClient
@@ -39,7 +40,10 @@ class CoinGeckoClient(BaseAPIClient):
             if response is None or response.status_code != 200:
                 raise APIRequestError(f"Failed to fetch page {page}")
 
-            data = response.json()
+            try:
+                data = response.json()
+            except ValueError as e:
+                raise APIRequestError(f"Invalid JSON response from page {page}: {e}")
             all_data.extend(data)
             logger.debug(f"Fetched {len(data)} items from page {page}")
 
@@ -54,8 +58,6 @@ class CoinGeckoClient(BaseAPIClient):
 
     def _save_to_file(self, market_data: List[MarketData], file_path: str) -> None:
         """Save market data to JSON file"""
-        import json
-
         logger.info(f"Saving market data to {file_path}")
 
         try:

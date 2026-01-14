@@ -27,7 +27,7 @@ class BaseAPIClient:
         """
         for attempt in range(self.settings.max_retries):
             try:
-                response = requests.get(url)
+                response = requests.get(url, timeout=30)
                 if response.status_code != 429:
                     return response
 

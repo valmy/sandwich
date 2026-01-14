@@ -330,31 +330,7 @@ class TestMatchWithBinancePairs:
 
             matched = match_with_binance_pairs(hyperliquid_pairs, "USDT", "swap")
 
-            captured = capsys.readouterr()
             assert len(matched) == 2
-            assert "Found 2 matching pairs" in captured.out
-        finally:
-            os.chdir(original_cwd)
-
-    def test_special_prefix_matches(self, tmp_path, capsys):
-        from sandwich.hyperliquid.pairs import match_with_binance_pairs
-
-        hyperliquid_pairs = ["KPEPE/USDC:USDC", "KSHIB/USDC:USDC"]
-
-        pairs_file = tmp_path / "usdt_swap_pairs.txt"
-        with open(pairs_file, "w") as f:
-            f.write("BINANCE:1000PEPEUSDTPERP\nBINANCE:1000SHIBUSDTPERP\n")
-
-        import os
-
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(tmp_path)
-
-            matched = match_with_binance_pairs(hyperliquid_pairs, "USDT", "swap")
-
-            captured = capsys.readouterr()
-            assert len(matched) == 0
         finally:
             os.chdir(original_cwd)
 

@@ -141,7 +141,7 @@ class MatchPairsCommand:
                 target_exchange = (
                     ExchangeId.HYPERLIQUID
                     if target_exchange_id == ExchangeId.BINANCE
-                    else target_exchange_id
+                    else ExchangeId.BINANCE
                 )
                 fetch_cmd = FetchPairsCommand(
                     ExchangeClient(self.settings, target_exchange),

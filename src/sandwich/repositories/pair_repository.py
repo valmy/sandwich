@@ -150,3 +150,23 @@ class PairRepository:
         self.filesystem.save_pairs_for_tradingview(
             pairs, exchange_id, base_currency, market_type, filename
         )
+
+    def save_sorted_pairs(
+        self,
+        sorted_data: str,
+        base_currency: str,
+        market_type: str,
+        is_hyperliquid: bool = False,
+    ) -> None:
+        """
+        Save sorted pairs to file.
+
+        Args:
+            sorted_data: String containing sorted pair lines
+            base_currency: Base currency
+            market_type: Market type
+            is_hyperliquid: Whether this is hyperliquid data
+        """
+        self.filesystem.save_sorted_pairs(
+            sorted_data, base_currency, market_type, is_hyperliquid
+        )

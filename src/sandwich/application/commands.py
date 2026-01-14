@@ -5,7 +5,7 @@ from sandwich.infrastructure.logging import get_logger
 from sandwich.repositories.pair_repository import PairRepository
 from sandwich.repositories.market_repository import MarketRepository
 from sandwich.domain.services import PairMatcher, MarketDataSorter
-from sandwich.domain.models import ExchangeId, MarketType, TradingPair
+from sandwich.domain.models import ExchangeId, MarketType
 from sandwich.domain.exceptions import SandwichError
 
 logger = get_logger(__name__)
@@ -131,14 +131,10 @@ class MatchPairsCommand:
             target_pairs_ccxt = self.pair_repository.load_ccxt_pairs(target_filename)
 
             # Override market_type for all pairs to match the target market type
-            source_pairs_ccxt = [
-                pair.model_copy(update={"market_type": target_market_type})
-                for pair in source_pairs_ccxt
-            ]
-            target_pairs_ccxt = [
-                pair.model_copy(update={"market_type": target_market_type})
-                for pair in target_pairs_ccxt
-            ]
+            for pair in source_pairs_ccxt:
+                pair.market_type = target_market_type
+            for pair in target_pairs_ccxt:
+                pair.market_type = target_market_type
 
             # If target doesn't exist, fetch it from correct exchange
             if not target_pairs_ccxt:
@@ -239,7 +235,7 @@ class SortPairsCommand:
                 )
             )
 
-            self.pair_repository.filesystem.save_sorted_pairs(
+            self.pair_repository.save_sorted_pairs(
                 sorted_data, base_currency, market_type, is_hyperliquid
             )
 

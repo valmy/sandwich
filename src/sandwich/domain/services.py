@@ -24,12 +24,12 @@ class PairMatcher:
         Normalize coin names by handling special prefixes.
 
         Args:
-            coin: Coin name (e.g., kPEPE, 1000PEPE)
+            coin: Coin name (e.g., KPEPE, 1000PEPE)
 
         Returns:
             Normalized coin name (e.g., PEPE)
         """
-        if coin.startswith("k") and len(coin) > 1 and coin[1].isupper():
+        if (coin.startswith("k") or coin.startswith("K")) and len(coin) > 1 and coin[1].isupper():
             return coin[1:]
 
         if coin.startswith("1000"):

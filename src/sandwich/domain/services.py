@@ -29,10 +29,17 @@ class PairMatcher:
         Returns:
             Normalized coin name (e.g., PEPE)
         """
-        if (coin.startswith("k") or coin.startswith("K")) and len(coin) > 1 and coin[1].isupper():
+        if not coin or len(coin) < 2:
+            return coin
+
+        if (
+            (coin.startswith("k") or coin.startswith("K"))
+            and len(coin) > 1
+            and coin[1].isupper()
+        ):
             return coin[1:]
 
-        if coin.startswith("1000"):
+        if coin.startswith("1000") and len(coin) > 4:
             return coin[4:]
 
         return coin

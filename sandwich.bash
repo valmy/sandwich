@@ -15,17 +15,26 @@ echo "=== Starting Sandwich Pair Generation ==="
 echo
 
 echo "Step 1: Fetching market data and generating USDT spot pairs..."
-uv run sandwich --fetch --base usdt --get-pairs
+if ! uv run sandwich --fetch --base usdt --get-pairs; then
+    echo "Error: Failed to fetch market data or generate USDT spot pairs" >&2
+    exit 1
+fi
 echo "✓ USDT spot pairs generated (sorted_usdt_spot.txt)"
 echo
 
 echo "Step 2: Generating USDT perp pairs from Binance..."
-uv run sandwich --base usdtperp --get-pairs
+if ! uv run sandwich --base usdtperp --get-pairs; then
+    echo "Error: Failed to generate USDT perp pairs" >&2
+    exit 1
+fi
 echo "✓ USDT perp pairs generated (usdt_swap_pairs.txt)"
 echo
 
 echo "Step 3: Filtering USDT perp pairs against Hyperliquid availability..."
-uv run sandwich --base usdtperp --hyperliquid
+if ! uv run sandwich --base usdtperp --hyperliquid; then
+    echo "Error: Failed to filter pairs against Hyperliquid" >&2
+    exit 1
+fi
 echo "✓ Filtered pairs generated (usdt_swap_hype_pairs.txt)"
 echo
 

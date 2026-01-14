@@ -152,15 +152,22 @@ class MatchPairsCommand:
                     if target_exchange_id == ExchangeId.BINANCE
                     else ExchangeId.BINANCE
                 )
-                fetch_cmd = FetchPairsCommand(
-                    ExchangeClient(self.settings, target_exchange),
-                    self.pair_repository,
-                    self.settings,
-                )
-                fetch_cmd.execute(target_base, source_market_type)
-                target_pairs_ccxt = self.pair_repository.load_ccxt_pairs(
-                    target_filename
-                )
+                try:
+                    exchange_client = ExchangeClient(self.settings, target_exchange)
+                    fetch_cmd = FetchPairsCommand(
+                        exchange_client,
+                        self.pair_repository,
+                        self.settings,
+                    )
+                    fetch_cmd.execute(target_base, source_market_type)
+                    target_pairs_ccxt = self.pair_repository.load_ccxt_pairs(
+                        target_filename
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to fetch pairs from {target_exchange.value}: {e}"
+                    )
+                    raise SandwichError(f"Failed to fetch target pairs: {e}")
 
             result = self.pair_matcher.match_pairs(
                 source_pairs_ccxt,

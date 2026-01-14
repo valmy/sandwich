@@ -30,12 +30,29 @@ class BaseAPIClient:
         """
         # Validate URL to prevent SSRF attacks
         from urllib.parse import urlparse
+        import ipaddress
 
         parsed = urlparse(url)
         if not parsed.scheme or parsed.scheme not in ["http", "https"]:
             raise APIRequestError("Invalid URL scheme")
         if not parsed.netloc:
             raise APIRequestError("Invalid URL")
+
+        try:
+            # Check if hostname is an IP address
+            ip = ipaddress.ip_address(parsed.hostname or "")
+            if ip.is_private or ip.is_loopback or ip.is_link_local:
+                raise APIRequestError("Access to internal networks not allowed")
+        except ValueError:
+            # Not an IP address, check for localhost/internal hostnames
+            hostname = (parsed.hostname or "").lower()
+            if (
+                hostname in ["localhost", "127.0.0.1", "::1"]
+                or hostname.startswith("10.")
+                or hostname.startswith("192.168.")
+                or hostname.startswith("172.")
+            ):
+                raise APIRequestError("Access to internal networks not allowed")
 
         for attempt in range(self.settings.max_retries):
             try:

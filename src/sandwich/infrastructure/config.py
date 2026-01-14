@@ -60,22 +60,30 @@ class Settings(BaseSettings):
         suffix = "_hype_pairs" if is_hyperliquid else "_pairs"
         filename = f"{safe_base_currency}_{safe_market_type}{suffix}.txt"
 
+        # Ensure filename doesn't contain path separators and resolve to prevent traversal
+        safe_filename = Path(filename).name
+        if safe_filename != filename:
+            raise ValueError("Invalid filename: contains path separators")
+
         # Fallback: if file doesn't exist or is empty, try "perp" instead of "swap"
         if safe_market_type == "swap":
-            filepath = self.data_dir / filename
+            filepath = self.data_dir / safe_filename
             try:
                 if not filepath.exists() or filepath.stat().st_size == 0:
                     # File doesn't exist or is empty, try "perp" variant
                     fallback_filename = f"{safe_base_currency}_perp{suffix}.txt"
-                    if (self.data_dir / fallback_filename).exists():
-                        self._filename_cache[cache_key] = fallback_filename
-                        return fallback_filename
+                    safe_fallback = Path(fallback_filename).name
+                    if safe_fallback != fallback_filename:
+                        raise ValueError("Invalid fallback filename: contains path separators")
+                    if (self.data_dir / safe_fallback).exists():
+                        self._filename_cache[cache_key] = safe_fallback
+                        return safe_fallback
             except OSError:
                 # If file operations fail, return original filename
                 pass
 
-        self._filename_cache[cache_key] = filename
-        return filename
+        self._filename_cache[cache_key] = safe_filename
+        return safe_filename
 
     def get_sorted_filename(
         self, base_currency: str, market_type: str, is_hyperliquid: bool = False

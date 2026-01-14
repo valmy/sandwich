@@ -14,12 +14,12 @@ command -v uv >/dev/null 2>&1 || { echo "Error: uv is not installed or not in PA
 echo "=== Starting Sandwich Pair Generation ==="
 echo
 
-echo "Step 1: Fetching market data and generating USDT spot pairs..."
-if ! uv run sandwich --fetch --base usdt --get-pairs; then
-    echo "Error: Failed to fetch market data or generate USDT spot pairs" >&2
+echo "Step 1: Fetching market data and generating USDC spot pairs..."
+if ! uv run sandwich --fetch --base usdc --get-pairs; then
+    echo "Error: Failed to fetch market data or generate USDC spot pairs" >&2
     exit 1
 fi
-echo "✓ USDT spot pairs generated (sorted_usdt_spot.txt)"
+echo "✓ USDC spot pairs generated (sorted_usdc_spot.txt)"
 echo
 
 echo "Step 2: Generating USDT perp pairs from Binance..."
@@ -41,7 +41,7 @@ echo
 echo "=== All steps completed successfully! ==="
 echo
 echo "Generated files:"
-echo "  - sorted_usdt_spot.txt    (USDT spot pairs, volume-sorted)"
+echo "  - sorted_usdc_spot.txt    (USDC spot pairs, volume-sorted)"
 echo "  - usdt_swap_pairs.txt     (All USDT perp pairs from Binance)"
 echo "  - usdt_swap_hype_pairs.txt (USDT perp pairs available on Hyperliquid)"
 echo "  - sorted_usdt_swap_hype.txt (Filtered pairs, volume-sorted)"

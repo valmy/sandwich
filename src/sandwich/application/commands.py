@@ -130,41 +130,20 @@ class MatchPairsCommand:
             source_pairs_ccxt = self.pair_repository.load_ccxt_pairs(source_filename)
             target_pairs_ccxt = self.pair_repository.load_ccxt_pairs(target_filename)
 
-            # Create new pairs with correct market_type instead of mutating existing ones
-            source_pairs_corrected = []
+            # Validate that loaded pairs have the expected market type
             for pair in source_pairs_ccxt:
                 if pair.market_type != target_market_type:
-                    source_pairs_corrected.append(
-                        TradingPair(
-                            symbol=pair.symbol,
-                            base=pair.base,
-                            quote=pair.quote,
-                            exchange=pair.exchange,
-                            market_type=target_market_type,
-                            is_active=pair.is_active,
-                        )
+                    logger.warning(
+                        f"Market type mismatch for {pair.symbol}: "
+                        f"expected {target_market_type}, got {pair.market_type}"
                     )
-                else:
-                    source_pairs_corrected.append(pair)
 
-            target_pairs_corrected = []
             for pair in target_pairs_ccxt:
                 if pair.market_type != target_market_type:
-                    target_pairs_corrected.append(
-                        TradingPair(
-                            symbol=pair.symbol,
-                            base=pair.base,
-                            quote=pair.quote,
-                            exchange=pair.exchange,
-                            market_type=target_market_type,
-                            is_active=pair.is_active,
-                        )
+                    logger.warning(
+                        f"Market type mismatch for {pair.symbol}: "
+                        f"expected {target_market_type}, got {pair.market_type}"
                     )
-                else:
-                    target_pairs_corrected.append(pair)
-
-            source_pairs_ccxt = source_pairs_corrected
-            target_pairs_ccxt = target_pairs_corrected
 
             # If target doesn't exist, fetch it from correct exchange
             if not target_pairs_ccxt:

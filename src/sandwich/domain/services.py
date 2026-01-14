@@ -221,7 +221,17 @@ class MarketDataSorter:
                 and item["symbol"] is not None
                 and item["total_volume"] is not None
             ):
-                valid_market_data.append(item)
+                # Validate that total_volume is numeric
+                try:
+                    volume = float(item["total_volume"])
+                    if volume >= 0:  # Ensure non-negative volume
+                        valid_market_data.append(item)
+                except (ValueError, TypeError):
+                    logger.warning(
+                        f"Invalid volume data for {item.get('symbol', 'unknown')}: "
+                        f"{item.get('total_volume')}"
+                    )
+                    continue
 
         market_data_sorted = sorted(
             valid_market_data, key=lambda x: x["total_volume"], reverse=True

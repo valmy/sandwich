@@ -28,6 +28,15 @@ class BaseAPIClient:
         Raises:
             APIRequestError: If API request fails after all retries
         """
+        # Validate URL to prevent SSRF attacks
+        from urllib.parse import urlparse
+
+        parsed = urlparse(url)
+        if not parsed.scheme or parsed.scheme not in ["http", "https"]:
+            raise APIRequestError("Invalid URL scheme")
+        if not parsed.netloc:
+            raise APIRequestError("Invalid URL")
+
         for attempt in range(self.settings.max_retries):
             try:
                 response = requests.get(url, timeout=30)

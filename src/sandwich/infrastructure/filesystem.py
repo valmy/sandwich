@@ -52,7 +52,7 @@ class FilesystemOperations:
                         tradingview_format = f"{pair}\n"
                     else:
                         # Otherwise, format it (legacy support)
-                        symbol = pair.split(":")[0].replace("/", "")
+                        symbol = pair.replace("/", "")
                         tradingview_format = f"{exchange_id_upper}:{symbol}{type_str}\n"
                     f.write(tradingview_format)
 

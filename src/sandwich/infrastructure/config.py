@@ -38,11 +38,20 @@ class Settings(BaseSettings):
     ) -> str:
         """Generate pairs filename"""
         # Sanitize inputs to prevent path traversal
-        safe_base_currency = "".join(c for c in base_currency if c.isalnum()).lower()
-        safe_market_type = "".join(c for c in market_type if c.isalnum())
+        import re
 
-        if not safe_base_currency or not safe_market_type:
-            raise ValueError("Invalid base_currency or market_type")
+        safe_base_currency = re.sub(r"[^a-zA-Z0-9]", "", base_currency).lower()
+        safe_market_type = re.sub(r"[^a-zA-Z0-9]", "", market_type)
+
+        # Additional validation to prevent empty strings after sanitization
+        if not safe_base_currency or len(safe_base_currency) < 2:
+            raise ValueError(
+                "Invalid base_currency: must contain at least 2 alphanumeric characters"
+            )
+        if not safe_market_type or len(safe_market_type) < 2:
+            raise ValueError(
+                "Invalid market_type: must contain at least 2 alphanumeric characters"
+            )
 
         cache_key = f"{safe_base_currency}_{safe_market_type}_{is_hyperliquid}"
         if cache_key in self._filename_cache:
@@ -73,11 +82,20 @@ class Settings(BaseSettings):
     ) -> str:
         """Generate sorted filename"""
         # Sanitize inputs to prevent path traversal
-        safe_base_currency = "".join(c for c in base_currency if c.isalnum()).lower()
-        safe_market_type = "".join(c for c in market_type if c.isalnum())
+        import re
 
-        if not safe_base_currency or not safe_market_type:
-            raise ValueError("Invalid base_currency or market_type")
+        safe_base_currency = re.sub(r"[^a-zA-Z0-9]", "", base_currency).lower()
+        safe_market_type = re.sub(r"[^a-zA-Z0-9]", "", market_type)
+
+        # Additional validation to prevent empty strings after sanitization
+        if not safe_base_currency or len(safe_base_currency) < 2:
+            raise ValueError(
+                "Invalid base_currency: must contain at least 2 alphanumeric characters"
+            )
+        if not safe_market_type or len(safe_market_type) < 2:
+            raise ValueError(
+                "Invalid market_type: must contain at least 2 alphanumeric characters"
+            )
 
         suffix = "_hype" if is_hyperliquid else ""
         return f"sorted_{safe_base_currency}_{safe_market_type}{suffix}.txt"

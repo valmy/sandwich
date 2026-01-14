@@ -156,10 +156,15 @@ class MatchPairsCommand:
                 for pair in target_pairs_ccxt
             ]
 
-            # If target doesn't exist (Hyperliquid), fetch it
-            if not target_pairs_ccxt and target_exchange_id != ExchangeId.HYPERLIQUID:
+            # If target doesn't exist, fetch it from correct exchange
+            if not target_pairs_ccxt:
+                target_exchange = (
+                    ExchangeId.HYPERLIQUID
+                    if target_exchange_id == ExchangeId.BINANCE
+                    else target_exchange_id
+                )
                 fetch_cmd = FetchPairsCommand(
-                    ExchangeClient(self.settings, ExchangeId.HYPERLIQUID),
+                    ExchangeClient(self.settings, target_exchange),
                     self.pair_repository,
                     self.settings,
                 )

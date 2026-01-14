@@ -100,8 +100,9 @@ class PairRepository:
                     base = base.strip()
                     quote = quote.strip()
                 else:
-                    # TradingView format: "BTCUSDT"
-                    for curr in ["USDT", "USDC", "FDUSD"]:
+                    # TradingView format: "BTCUSDT" - match longest suffix first
+                    currencies = ["FDUSD", "USDT", "USDC"]
+                    for curr in currencies:
                         if symbol.upper().endswith(curr.upper()):
                             quote = curr
                             base = symbol.upper()[: -len(curr)]

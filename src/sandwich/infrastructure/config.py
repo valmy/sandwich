@@ -40,16 +40,20 @@ class Settings(BaseSettings):
         # Fallback: if file doesn't exist or is empty, try "perp" instead of "swap"
         filepath = self.data_dir / filename
         if market_type == "swap":
-            if not filepath.exists():
-                # File doesn't exist, try "perp" variant
-                fallback_filename = f"{base_currency.lower()}_perp{suffix}.txt"
-                if (self.data_dir / fallback_filename).exists():
-                    return fallback_filename
-            elif filepath.exists() and filepath.stat().st_size == 0:
-                # File is empty, try "perp" variant
-                fallback_filename = f"{base_currency.lower()}_perp{suffix}.txt"
-                if (self.data_dir / fallback_filename).exists():
-                    return fallback_filename
+            try:
+                if not filepath.exists():
+                    # File doesn't exist, try "perp" variant
+                    fallback_filename = f"{base_currency.lower()}_perp{suffix}.txt"
+                    if (self.data_dir / fallback_filename).exists():
+                        return fallback_filename
+                elif filepath.stat().st_size == 0:
+                    # File is empty, try "perp" variant
+                    fallback_filename = f"{base_currency.lower()}_perp{suffix}.txt"
+                    if (self.data_dir / fallback_filename).exists():
+                        return fallback_filename
+            except OSError:
+                # If file operations fail, return original filename
+                pass
 
         return filename
 

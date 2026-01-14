@@ -28,8 +28,11 @@ class BaseAPIClient:
         for attempt in range(self.settings.max_retries):
             try:
                 response = requests.get(url, timeout=30)
-                if response.status_code != 429:
+                if response.status_code == 200:
                     return response
+                elif response.status_code != 429:
+                    logger.error(f"HTTP {response.status_code} error: {response.text}")
+                    raise APIRequestError(f"HTTP {response.status_code} error")
 
                 logger.warning(
                     f"Rate limited (429) on attempt {attempt + 1}, "

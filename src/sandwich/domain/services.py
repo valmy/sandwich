@@ -162,7 +162,14 @@ class MarketDataSorter:
         Returns:
             Matching line or empty string if not found
         """
-        symbol = market_data_item["symbol"].upper() + base_currency
+        if not isinstance(market_data_item, dict) or "symbol" not in market_data_item:
+            return ""
+
+        symbol_value = market_data_item["symbol"]
+        if symbol_value is None:
+            return ""
+
+        symbol = symbol_value.upper() + base_currency
 
         for line in lines:
             symbol_in_line = self.remove_prefix_suffix(line)
@@ -200,8 +207,20 @@ class MarketDataSorter:
         Returns:
             Tuple of (sorted_data_string, sorted_count, unsorted_count)
         """
+        # Filter and validate market data
+        valid_market_data = []
+        for item in market_data:
+            if (
+                isinstance(item, dict)
+                and "symbol" in item
+                and "total_volume" in item
+                and item["symbol"] is not None
+                and item["total_volume"] is not None
+            ):
+                valid_market_data.append(item)
+
         market_data_sorted = sorted(
-            market_data, key=lambda x: x["total_volume"], reverse=True
+            valid_market_data, key=lambda x: x["total_volume"], reverse=True
         )
 
         sorted_data = ""

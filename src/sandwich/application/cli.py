@@ -42,8 +42,9 @@ def main(
 
         if get_pairs:
             if hyperliquid:
-                fetch_hl_cmd = container.get_fetch_pairs_command(ExchangeId.HYPERLIQUID)
-                fetch_hl_cmd.execute(base_currency, market_type)
+                # Fetch from Binance and match against Hyperliquid (filter Binance pairs by Hyperliquid availability)
+                fetch_bn_cmd = container.get_fetch_pairs_command(ExchangeId.BINANCE)
+                fetch_bn_cmd.execute(base_currency, market_type)
 
                 match_cmd = container.get_match_pairs_command()
                 match_cmd.execute(ExchangeId.BINANCE, base_currency, market_type)

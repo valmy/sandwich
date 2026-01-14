@@ -90,8 +90,8 @@ class PairMatcher:
 
                 # Check for special prefix matches or currency mapping matches
                 is_currency_mapping = (
-                    self.CURRENCY_EQUIVALENCE.get(source_pair.base, "")
-                    != source_pair.base
+                    source_pair.base in self.CURRENCY_EQUIVALENCE
+                    and self.CURRENCY_EQUIVALENCE[source_pair.base] != source_pair.base
                 )
 
                 if source_pair.base != normalized_base or is_currency_mapping:

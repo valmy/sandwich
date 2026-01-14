@@ -86,8 +86,10 @@ class PairRepository:
 
                 # Remove PERP suffix
                 is_swap = False
-                if symbol.upper().endswith("PERP"):
-                    symbol = symbol.upper()[:-4]
+                symbol_upper = symbol.upper()
+                if symbol_upper.endswith("PERP"):
+                    symbol = symbol[:-4]
+                    symbol_upper = symbol.upper()
                     is_swap = True
 
                 # Extract base and quote
@@ -103,9 +105,9 @@ class PairRepository:
                     # TradingView format: "BTCUSDT" - match longest suffix first
                     currencies = ["FDUSD", "USDT", "USDC"]
                     for curr in currencies:
-                        if symbol.upper().endswith(curr.upper()):
+                        if symbol_upper.endswith(curr.upper()):
                             quote = curr
-                            base = symbol.upper()[: -len(curr)]
+                            base = symbol_upper[: -len(curr)]
                             break
 
                 if base is None or quote is None:

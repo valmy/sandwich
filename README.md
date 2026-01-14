@@ -29,7 +29,7 @@ uv run sandwich --base usdc --fetch --get-pairs
 uv run sandwich --base usdtperp --get-pairs
 
 # Fetch and process Hyperliquid exchange data
-uv run sandwich --hyperliquid --fetch
+uv run sandwich --base usdtperp --hyperliquid
 
 # Only sort existing pair data (no fetching)
 uv run sandwich --base fdusd

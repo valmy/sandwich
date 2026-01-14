@@ -45,7 +45,7 @@ class FilesystemOperations:
         exchange_id_upper = exchange_id.upper()
 
         try:
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 for pair in pairs:
                     # If pair already contains exchange prefix, use it as-is
                     if ":" in pair:
@@ -83,7 +83,7 @@ class FilesystemOperations:
             return []
 
         try:
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 pairs = [line.strip() for line in f.readlines() if line.strip()]
             logger.info(f"Loaded {len(pairs)} pairs from {filename}")
             return pairs
@@ -115,7 +115,7 @@ class FilesystemOperations:
         filepath = self.settings.data_dir / filename
 
         try:
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(sorted_data)
             logger.info(f"Saved sorted pairs to {filename}")
         except (IOError, OSError) as e:
@@ -140,7 +140,7 @@ class FilesystemOperations:
             return []
 
         try:
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 data = json.loads(f.read())
 
             logger.info(f"Loaded {len(data)} market data items")

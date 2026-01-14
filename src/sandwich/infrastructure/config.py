@@ -37,20 +37,27 @@ class Settings(BaseSettings):
         self, base_currency: str, market_type: str, is_hyperliquid: bool = False
     ) -> str:
         """Generate pairs filename"""
-        cache_key = f"{base_currency}_{market_type}_{is_hyperliquid}"
+        # Sanitize inputs to prevent path traversal
+        safe_base_currency = "".join(c for c in base_currency if c.isalnum()).lower()
+        safe_market_type = "".join(c for c in market_type if c.isalnum())
+
+        if not safe_base_currency or not safe_market_type:
+            raise ValueError("Invalid base_currency or market_type")
+
+        cache_key = f"{safe_base_currency}_{safe_market_type}_{is_hyperliquid}"
         if cache_key in self._filename_cache:
             return self._filename_cache[cache_key]
 
         suffix = "_hype_pairs" if is_hyperliquid else "_pairs"
-        filename = f"{base_currency.lower()}_{market_type}{suffix}.txt"
+        filename = f"{safe_base_currency}_{safe_market_type}{suffix}.txt"
 
         # Fallback: if file doesn't exist or is empty, try "perp" instead of "swap"
-        if market_type == "swap":
+        if safe_market_type == "swap":
             filepath = self.data_dir / filename
             try:
                 if not filepath.exists() or filepath.stat().st_size == 0:
                     # File doesn't exist or is empty, try "perp" variant
-                    fallback_filename = f"{base_currency.lower()}_perp{suffix}.txt"
+                    fallback_filename = f"{safe_base_currency}_perp{suffix}.txt"
                     if (self.data_dir / fallback_filename).exists():
                         self._filename_cache[cache_key] = fallback_filename
                         return fallback_filename
@@ -65,5 +72,12 @@ class Settings(BaseSettings):
         self, base_currency: str, market_type: str, is_hyperliquid: bool = False
     ) -> str:
         """Generate sorted filename"""
+        # Sanitize inputs to prevent path traversal
+        safe_base_currency = "".join(c for c in base_currency if c.isalnum()).lower()
+        safe_market_type = "".join(c for c in market_type if c.isalnum())
+
+        if not safe_base_currency or not safe_market_type:
+            raise ValueError("Invalid base_currency or market_type")
+
         suffix = "_hype" if is_hyperliquid else ""
-        return f"sorted_{base_currency.lower()}_{market_type}{suffix}.txt"
+        return f"sorted_{safe_base_currency}_{safe_market_type}{suffix}.txt"

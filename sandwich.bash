@@ -6,7 +6,10 @@
 # 2. Get USDT perp pairs from Binance
 # 3. Filter USDT perp pairs against Hyperliquid availability
 
-set -e  # Exit on any error
+set -euo pipefail  # Exit on any error, undefined variables, and pipe failures
+
+# Validate that required commands exist
+command -v uv >/dev/null 2>&1 || { echo "Error: uv is not installed or not in PATH" >&2; exit 1; }
 
 echo "=== Starting Sandwich Pair Generation ==="
 echo

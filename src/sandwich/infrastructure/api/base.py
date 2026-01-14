@@ -38,11 +38,11 @@ class BaseAPIClient:
                     time.sleep(2**attempt)
                 else:
                     logger.warning(
-                        f"HTTP {response.status_code} error on attempt {attempt + 1}: {response.text}"
+                        f"HTTP {response.status_code} error on attempt {attempt + 1}: [Response content hidden for security]"
                     )
                     if attempt == self.settings.max_retries - 1:
                         raise APIRequestError(
-                            f"HTTP {response.status_code} error: {response.text}"
+                            f"HTTP {response.status_code} error: [Response content hidden for security]"
                         )
                     time.sleep(2**attempt)
             except requests.RequestException as e:

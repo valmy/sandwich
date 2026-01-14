@@ -27,9 +27,9 @@ def main(
         get_pairs: Get pairs from exchange
         hyperliquid: Use Hyperliquid exchange
     """
-    try:
-        container = DIContainer()
+    container = DIContainer()
 
+    try:
         base_currency, market_type = parse_base_and_market_type(base)
 
         logger.info(

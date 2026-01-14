@@ -5,7 +5,7 @@ from sandwich.infrastructure.logging import get_logger
 from sandwich.repositories.pair_repository import PairRepository
 from sandwich.repositories.market_repository import MarketRepository
 from sandwich.domain.services import PairMatcher, MarketDataSorter
-from sandwich.domain.models import ExchangeId, MarketType
+from sandwich.domain.models import ExchangeId, MarketType, TradingPair
 from sandwich.domain.exceptions import SandwichError
 
 logger = get_logger(__name__)
@@ -130,11 +130,41 @@ class MatchPairsCommand:
             source_pairs_ccxt = self.pair_repository.load_ccxt_pairs(source_filename)
             target_pairs_ccxt = self.pair_repository.load_ccxt_pairs(target_filename)
 
-            # Override market_type for all pairs to match the target market type
+            # Create new pairs with correct market_type instead of mutating existing ones
+            source_pairs_corrected = []
             for pair in source_pairs_ccxt:
-                pair.market_type = target_market_type
+                if pair.market_type != target_market_type:
+                    source_pairs_corrected.append(
+                        TradingPair(
+                            symbol=pair.symbol,
+                            base=pair.base,
+                            quote=pair.quote,
+                            exchange=pair.exchange,
+                            market_type=target_market_type,
+                            is_active=pair.is_active,
+                        )
+                    )
+                else:
+                    source_pairs_corrected.append(pair)
+
+            target_pairs_corrected = []
             for pair in target_pairs_ccxt:
-                pair.market_type = target_market_type
+                if pair.market_type != target_market_type:
+                    target_pairs_corrected.append(
+                        TradingPair(
+                            symbol=pair.symbol,
+                            base=pair.base,
+                            quote=pair.quote,
+                            exchange=pair.exchange,
+                            market_type=target_market_type,
+                            is_active=pair.is_active,
+                        )
+                    )
+                else:
+                    target_pairs_corrected.append(pair)
+
+            source_pairs_ccxt = source_pairs_corrected
+            target_pairs_ccxt = target_pairs_corrected
 
             # If target doesn't exist, fetch it from correct exchange
             if not target_pairs_ccxt:

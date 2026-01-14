@@ -56,16 +56,20 @@ class PairMatcher:
         Returns:
             PairMatchResult with matched and missing pairs
         """
-        target_normalized: Dict[str, TradingPair] = {}
+        target_normalized: Dict[str, List[TradingPair]] = {}
         for pair in target_pairs:
             normalized_base = self.normalize_coin_name(pair.base)
-            target_normalized[normalized_base] = pair
+            if normalized_base not in target_normalized:
+                target_normalized[normalized_base] = []
+            target_normalized[normalized_base].append(pair)
 
             # Add mapped currency (e.g., USDT ↔ USDC)
             mapped_base = self.CURRENCY_EQUIVALENCE.get(pair.base)
             if mapped_base and mapped_base != pair.base:
                 mapped_normalized = self.normalize_coin_name(mapped_base)
-                target_normalized[mapped_normalized] = pair
+                if mapped_normalized not in target_normalized:
+                    target_normalized[mapped_normalized] = []
+                target_normalized[mapped_normalized].append(pair)
 
         matched_pairs: List[TradingPair] = []
         missing_pairs: List[TradingPair] = []

@@ -23,7 +23,10 @@ class BaseAPIClient:
             url: URL to request
 
         Returns:
-            Response object or None if max retries exhausted
+            Response object
+
+        Raises:
+            APIRequestError: If API request fails after all retries
         """
         for attempt in range(self.settings.max_retries):
             try:
@@ -35,23 +38,18 @@ class BaseAPIClient:
                         f"Rate limited (429) on attempt {attempt + 1}, "
                         f"retrying in {2**attempt}s"
                     )
-                    time.sleep(2**attempt)
+                    if attempt < self.settings.max_retries - 1:
+                        time.sleep(2**attempt)
                 else:
                     logger.warning(
                         f"HTTP {response.status_code} error on attempt {attempt + 1}: [Response content hidden for security]"
                     )
-                    if attempt == self.settings.max_retries - 1:
-                        raise APIRequestError(
-                            f"HTTP {response.status_code} error: [Response content hidden for security]"
-                        )
-                    time.sleep(2**attempt)
+                    if attempt < self.settings.max_retries - 1:
+                        time.sleep(2**attempt)
             except requests.RequestException as e:
                 logger.error(f"Request failed on attempt {attempt + 1}: {e}")
-                if attempt == self.settings.max_retries - 1:
-                    raise APIRequestError(
-                        f"Request failed after {self.settings.max_retries} attempts: {e}"
-                    )
-                time.sleep(2**attempt)
+                if attempt < self.settings.max_retries - 1:
+                    time.sleep(2**attempt)
 
         logger.error(f"Max retries ({self.settings.max_retries}) exhausted")
-        return None
+        raise APIRequestError(f"Request failed after {self.settings.max_retries} attempts")

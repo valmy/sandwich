@@ -1,7 +1,7 @@
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from pydantic_settings import BaseSettings
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, Dict
 
 
 class Settings(BaseSettings):
@@ -30,8 +30,8 @@ class Settings(BaseSettings):
 
     EXCLUDED_CURRENCIES: ClassVar[list[str]] = ["USDC", "FDUSD", "EUR"]
 
-    # In-memory cache for filenames to avoid repeated I/O
-    _filename_cache: ClassVar[dict[str, str]] = {}
+    # Instance-specific cache for filenames to avoid repeated I/O
+    _filename_cache: Dict[str, str] = PrivateAttr(default_factory=dict)
 
     def get_pairs_filename(
         self, base_currency: str, market_type: str, is_hyperliquid: bool = False

@@ -70,10 +70,7 @@ class PairRepository:
                         potential_prefix, symbol_part = parts
                         # Check if first part looks like an exchange name
                         if potential_prefix.upper() in [
-                            "BINANCE",
-                            "HYPERLIQUID",
-                            "BYBIT",
-                            "OKX",
+                            e.value.upper() for e in ExchangeId
                         ]:
                             prefix = potential_prefix.upper()
                             symbol = symbol_part
@@ -117,13 +114,10 @@ class PairRepository:
                     continue
 
                 # Map prefix to ExchangeId enum
-                exchange_map = {
-                    "BINANCE": ExchangeId.BINANCE,
-                    "HYPERLIQUID": ExchangeId.HYPERLIQUID,
-                    "BYBIT": ExchangeId.BYBIT,
-                    "OKX": ExchangeId.OKX,
-                }
-                exchange_id = exchange_map.get(prefix.upper(), ExchangeId.BINANCE)
+                try:
+                    exchange_id = ExchangeId(prefix.lower())
+                except ValueError:
+                    exchange_id = ExchangeId.BINANCE
 
                 market_type = MarketType.SWAP if is_swap else MarketType.SPOT
 

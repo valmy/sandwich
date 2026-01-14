@@ -132,25 +132,11 @@ class MatchPairsCommand:
 
             # Override market_type for all pairs to match the target market type
             source_pairs_ccxt = [
-                TradingPair(
-                    symbol=pair.symbol,
-                    base=pair.base,
-                    quote=pair.quote,
-                    exchange=pair.exchange,
-                    market_type=target_market_type,
-                    is_active=pair.is_active,
-                )
+                pair.model_copy(update={"market_type": target_market_type})
                 for pair in source_pairs_ccxt
             ]
             target_pairs_ccxt = [
-                TradingPair(
-                    symbol=pair.symbol,
-                    base=pair.base,
-                    quote=pair.quote,
-                    exchange=pair.exchange,
-                    market_type=target_market_type,
-                    is_active=pair.is_active,
-                )
+                pair.model_copy(update={"market_type": target_market_type})
                 for pair in target_pairs_ccxt
             ]
 

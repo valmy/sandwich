@@ -37,6 +37,7 @@ class BaseAPIClient:
                     )
                     time.sleep(2**attempt)
                 else:
+                    time.sleep(2**attempt)
                     logger.warning(
                         f"HTTP {response.status_code} error on attempt {attempt + 1}: {response.text}"
                     )
@@ -44,7 +45,6 @@ class BaseAPIClient:
                         raise APIRequestError(
                             f"HTTP {response.status_code} error: {response.text}"
                         )
-                    time.sleep(2**attempt)
             except requests.RequestException as e:
                 logger.error(f"Request failed on attempt {attempt + 1}: {e}")
                 if attempt == self.settings.max_retries - 1:

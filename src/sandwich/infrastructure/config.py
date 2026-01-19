@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     base_currency: str = Field(default="USDT", description="Default base currency")
 
     EXCLUDED_CURRENCIES: ClassVar[list[str]] = ["USDC", "FDUSD", "EUR"]
+    QUOTE_CURRENCIES: ClassVar[list[str]] = ["FDUSD", "USDT", "USDC"]
 
     # Instance-specific cache for filenames to avoid repeated I/O
     _filename_cache: Dict[str, str] = PrivateAttr(default_factory=dict)

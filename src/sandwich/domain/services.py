@@ -2,7 +2,7 @@ from typing import List, Dict
 
 from sandwich.infrastructure.config import Settings
 from sandwich.infrastructure.logging import get_logger
-from sandwich.domain.models import TradingPair, PairMatchResult
+from sandwich.domain.models import TradingPair, PairMatchResult, ExchangeId
 
 logger = get_logger(__name__)
 
@@ -145,7 +145,7 @@ class MarketDataSorter:
 
     def remove_prefix_suffix(self, s: str) -> str:
         """
-        Remove BINANCE: prefix and .P suffix from string.
+        Remove exchange prefix and .P suffix from string.
 
         Args:
             s: Input string
@@ -153,8 +153,13 @@ class MarketDataSorter:
         Returns:
             String with prefix and suffix removed
         """
-        if s.startswith("BINANCE:"):
-            s = s.replace("BINANCE:", "", 1)
+        # Remove any exchange prefix (e.g., BINANCE:, HYPERLIQUID:, etc.)
+        for exchange in ExchangeId:
+            prefix = f"{exchange.value.upper()}:"
+            if s.startswith(prefix):
+                s = s.replace(prefix, "", 1)
+                break
+        # Remove .P suffix (perpetual)
         if s.endswith(".P"):
             s = s[:-2]
         return s

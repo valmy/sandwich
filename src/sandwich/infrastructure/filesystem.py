@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from sandwich.infrastructure.config import Settings
 from sandwich.infrastructure.logging import get_logger
-from sandwich.domain.models import MarketType
+from sandwich.domain.models import MarketType, ExchangeId
 from sandwich.domain.exceptions import FileOperationError
 
 logger = get_logger(__name__)
@@ -48,11 +48,11 @@ class FilesystemOperations:
             with open(filepath, "w", encoding="utf-8") as f:
                 for pair in pairs:
                     # If pair already contains exchange prefix, use it as-is
-                    # Check for valid exchange prefixes (e.g., BINANCE:, HYPERLIQUID:)
+                    # Check for valid exchange prefixes from ExchangeId enum
                     # CCXT format like "BTC/USDT:USDT" has colon but not exchange prefix
                     has_exchange_prefix = False
-                    for valid_prefix in ["BINANCE:", "HYPERLIQUID:"]:
-                        if pair.startswith(valid_prefix):
+                    for exchange in ExchangeId:
+                        if pair.startswith(f"{exchange.value.upper()}:"):
                             has_exchange_prefix = True
                             break
 
@@ -60,7 +60,13 @@ class FilesystemOperations:
                         tradingview_format = f"{pair}\n"
                     else:
                         # Otherwise, format it (convert from CCXT format)
-                        symbol = pair.replace("/", "").replace(":USDT", "").replace(":USDC", "").replace(":FDUSD", "")
+                        # Remove quote currency suffixes using suffix matching (not replace)
+                        # to avoid issues with currency names appearing within other names
+                        symbol = pair.replace("/", "")
+                        for quote_currency in self.settings.QUOTE_CURRENCIES:
+                            if symbol.endswith(f":{quote_currency}"):
+                                symbol = symbol[: -len(f":{quote_currency}")]
+                                break
                         tradingview_format = f"{exchange_id_upper}:{symbol}{type_str}\n"
                     f.write(tradingview_format)
 

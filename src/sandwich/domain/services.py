@@ -145,7 +145,7 @@ class MarketDataSorter:
 
     def remove_prefix_suffix(self, s: str) -> str:
         """
-        Remove BINANCE: prefix and PERP suffix from string.
+        Remove BINANCE: prefix and .P suffix from string.
 
         Args:
             s: Input string
@@ -155,8 +155,8 @@ class MarketDataSorter:
         """
         if s.startswith("BINANCE:"):
             s = s.replace("BINANCE:", "", 1)
-        if s.endswith("PERP"):
-            s = s[:-4]
+        if s.endswith(".P"):
+            s = s[:-2]
         return s
 
     def find_symbol_in_lines(

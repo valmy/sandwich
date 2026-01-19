@@ -41,18 +41,26 @@ class FilesystemOperations:
             )
 
         filepath = self.settings.data_dir / filename
-        type_str = "PERP" if market_type == MarketType.SWAP else ""
+        type_str = ".P" if market_type == MarketType.SWAP else ""
         exchange_id_upper = exchange_id.upper()
 
         try:
             with open(filepath, "w", encoding="utf-8") as f:
                 for pair in pairs:
                     # If pair already contains exchange prefix, use it as-is
-                    if ":" in pair:
+                    # Check for valid exchange prefixes (e.g., BINANCE:, HYPERLIQUID:)
+                    # CCXT format like "BTC/USDT:USDT" has colon but not exchange prefix
+                    has_exchange_prefix = False
+                    for valid_prefix in ["BINANCE:", "HYPERLIQUID:"]:
+                        if pair.startswith(valid_prefix):
+                            has_exchange_prefix = True
+                            break
+
+                    if has_exchange_prefix:
                         tradingview_format = f"{pair}\n"
                     else:
-                        # Otherwise, format it (legacy support)
-                        symbol = pair.replace("/", "")
+                        # Otherwise, format it (convert from CCXT format)
+                        symbol = pair.replace("/", "").replace(":USDT", "").replace(":USDC", "").replace(":FDUSD", "")
                         tradingview_format = f"{exchange_id_upper}:{symbol}{type_str}\n"
                     f.write(tradingview_format)
 

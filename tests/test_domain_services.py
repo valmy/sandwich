@@ -86,27 +86,27 @@ class TestPairMatcher:
 @pytest.mark.unit
 class TestMarketDataSorter:
     def test_remove_prefix_suffix(self, market_sorter):
-        assert market_sorter.remove_prefix_suffix("BINANCE:BTCUSDTPERP") == "BTCUSDT"
+        assert market_sorter.remove_prefix_suffix("BINANCE:BTCUSDT.P") == "BTCUSDT"
         assert market_sorter.remove_prefix_suffix("BTCUSDT") == "BTCUSDT"
 
     def test_find_symbol_in_lines(self, market_sorter):
-        lines = ["BINANCE:BTCUSDTPERP", "BINANCE:ETHUSDTPERP"]
+        lines = ["BINANCE:BTCUSDT.P", "BINANCE:ETHUSDT.P"]
         item = {"symbol": "BTC"}
-        
+
         line = market_sorter.find_symbol_in_lines(item, lines, "USDT")
-        assert line == "BINANCE:BTCUSDTPERP"
+        assert line == "BINANCE:BTCUSDT.P"
 
     def test_sort_pairs_by_volume(self, market_sorter):
         market_data = [
             {"symbol": "ETH", "total_volume": 1000},
             {"symbol": "BTC", "total_volume": 2000},
         ]
-        lines = ["BINANCE:BTCUSDTPERP", "BINANCE:ETHUSDTPERP"]
-        
+        lines = ["BINANCE:BTCUSDT.P", "BINANCE:ETHUSDT.P"]
+
         sorted_data, sorted_count, unsorted_count = market_sorter.sort_pairs_by_volume(
             market_data, lines, "USDT", "swap"
         )
-        
+
         assert sorted_count == 2
         assert unsorted_count == 0
-        assert sorted_data.startswith("BINANCE:BTCUSDTPERP") # BTC has higher volume
+        assert sorted_data.startswith("BINANCE:BTCUSDT.P") # BTC has higher volume

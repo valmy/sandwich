@@ -90,12 +90,12 @@ def sample_binance_pairs():
 @pytest.fixture
 def sample_tradingview_pairs():
     return [
-        "BINANCE:BTCUSDTPERP",
-        "BINANCE:ETHUSDTPERP",
-        "BINANCE:SOLUSDTPERP",
-        "BINANCE:1000PEPEUSDTPERP",
-        "BINANCE:XRPUSDTPERP",
-        "BINANCE:BNBUSDTPERP",
+        "BINANCE:BTCUSDT.P",
+        "BINANCE:ETHUSDT.P",
+        "BINANCE:SOLUSDT.P",
+        "BINANCE:1000PEPEUSDT.P",
+        "BINANCE:XRPUSDT.P",
+        "BINANCE:BNBUSDT.P",
     ]
 
 

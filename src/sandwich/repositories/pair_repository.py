@@ -56,7 +56,7 @@ class PairRepository:
                     continue
 
                 # Handle different formats:
-                # 1. TradingView: "BINANCE:BTCUSDTPERP"
+                # 1. TradingView: "BINANCE:BTCUSDT.P"
                 # 2. CCXT: "BTC/USDT"
                 # 3. Mixed: "BTC/USDT:USDT"
 
@@ -81,11 +81,11 @@ class PairRepository:
                         ):
                             symbol = potential_prefix  # Use "BTC/USDT" part
 
-                # Remove PERP suffix
+                # Remove .P suffix (perpetual)
                 is_swap = False
                 symbol_upper = symbol.upper()
-                if symbol_upper.endswith("PERP"):
-                    symbol = symbol[:-4]
+                if symbol_upper.endswith(".P"):
+                    symbol = symbol[:-2]
                     symbol_upper = symbol.upper()
                     is_swap = True
 

@@ -186,7 +186,7 @@ class MatchPairsCommand:
 
                 # Create TradingView format symbol
                 if pair.market_type == MarketType.SWAP:
-                    tradingview_symbol = f"{output_base}{output_quote}PERP"
+                    tradingview_symbol = f"{output_base}{output_quote}.P"
                 else:
                     tradingview_symbol = f"{output_base}{output_quote}"
 

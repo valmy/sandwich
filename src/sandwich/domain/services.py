@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Set
 
 from sandwich.infrastructure.config import Settings
 from sandwich.infrastructure.logging import get_logger
@@ -165,7 +165,11 @@ class MarketDataSorter:
         return s
 
     def find_symbol_in_lines(
-        self, market_data_item: dict, lines: List[str], base_currency: str
+        self,
+        market_data_item: dict,
+        lines: List[str],
+        base_currency: str,
+        stablecoins: Set[str],
     ) -> str:
         """
         Find matching trading pair line for a market data item.
@@ -174,6 +178,7 @@ class MarketDataSorter:
             market_data_item: Market data item with 'symbol' field
             lines: List of trading pair lines
             base_currency: Base currency to match
+            stablecoins: Set of stablecoin symbols to filter out
 
         Returns:
             Matching line or empty string if not found
@@ -186,6 +191,12 @@ class MarketDataSorter:
             return ""
 
         symbol = symbol_value.upper() + base_currency
+        symbol_upper = symbol_value.upper()
+
+        # Check if symbol is a stablecoin
+        if symbol_upper in stablecoins:
+            logger.debug(f"Filtering out stablecoin: {symbol_upper}")
+            return ""
 
         for line in lines:
             symbol_in_line = self.remove_prefix_suffix(line)
@@ -209,6 +220,7 @@ class MarketDataSorter:
         base_currency: str,
         market_type: str,
         is_hyperliquid: bool = False,
+        stablecoins: Set[str] | None = None,
     ) -> tuple[str, int, int]:
         """
         Sort trading pairs by market volume.
@@ -219,10 +231,14 @@ class MarketDataSorter:
             base_currency: Base currency
             market_type: Market type
             is_hyperliquid: Whether this is hyperliquid data
+            stablecoins: Set of stablecoin symbols to filter out
 
         Returns:
             Tuple of (sorted_data_string, sorted_count, unsorted_count)
         """
+        if stablecoins is None:
+            stablecoins = set()
+
         # Filter and validate market data
         valid_market_data = []
         for item in market_data:
@@ -251,16 +267,37 @@ class MarketDataSorter:
 
         sorted_data = ""
         sorted_symbols: set = set()
+        filtered_stablecoins_count = 0
+        filtered_stablecoin_lines: set = set()
 
         for item in market_data_sorted:
-            line = self.find_symbol_in_lines(item, pairs_lines, base_currency)
+            symbol_upper = item.get("symbol", "").upper()
+            line = self.find_symbol_in_lines(
+                item, pairs_lines, base_currency, stablecoins
+            )
             if line:
                 sorted_data += line + "\n"
                 sorted_symbols.add(line)
+            elif symbol_upper in stablecoins:
+                # Symbol was filtered because it's a stablecoin
+                # Find the matching line (without stablecoin filter) to exclude from unsorted
+                for pair_line in pairs_lines:
+                    symbol_in_line = self.remove_prefix_suffix(pair_line)
+                    expected_pair = symbol_upper + base_currency
+                    if (
+                        symbol_in_line.upper() == expected_pair
+                        or symbol_in_line.upper() == ("1000" + expected_pair)
+                    ):
+                        filtered_stablecoin_lines.add(pair_line)
+                        filtered_stablecoins_count += 1
+                        break
+                else:
+                    # Stablecoin not found in pairs (may be excluded currency)
+                    pass
 
         unsorted_count = 0
         for line in pairs_lines:
-            if line not in sorted_symbols:
+            if line not in sorted_symbols and line not in filtered_stablecoin_lines:
                 sorted_data += line + "\n"
                 unsorted_count += 1
 
@@ -268,5 +305,7 @@ class MarketDataSorter:
 
         logger.info(f"Sorted {sorted_count} pairs by volume")
         logger.info(f"Unsorted pairs: {unsorted_count}")
+        if filtered_stablecoins_count > 0:
+            logger.info(f"Filtered out {filtered_stablecoins_count} stablecoin pairs")
 
         return sorted_data, sorted_count, unsorted_count

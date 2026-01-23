@@ -220,11 +220,13 @@ class SortPairsCommand:
         pair_repository: PairRepository,
         market_repository: MarketRepository,
         settings: Settings,
+        coingecko_client: CoinGeckoClient,
     ) -> None:
         self.market_sorter = market_sorter
         self.pair_repository = pair_repository
         self.market_repository = market_repository
         self.settings = settings
+        self.coingecko_client = coingecko_client
 
     def execute(
         self, base_currency: str, market_type: str, is_hyperliquid: bool = False
@@ -235,6 +237,12 @@ class SortPairsCommand:
                 f"Sorting {base_currency} {market_type} pairs "
                 f"({'hyperliquid' if is_hyperliquid else 'regular'})"
             )
+
+            # Fetch stablecoins for filtering
+            stablecoins_file = str(
+                self.settings.data_dir / self.settings.stablecoins_file
+            )
+            stablecoins = self.coingecko_client.fetch_stablecoins(stablecoins_file)
 
             market_data = [
                 m.model_dump() for m in self.market_repository.load_market_data()
@@ -247,7 +255,12 @@ class SortPairsCommand:
 
             sorted_data, sorted_count, unsorted_count = (
                 self.market_sorter.sort_pairs_by_volume(
-                    market_data, pairs_lines, base_currency, market_type, is_hyperliquid
+                    market_data,
+                    pairs_lines,
+                    base_currency,
+                    market_type,
+                    is_hyperliquid,
+                    stablecoins,
                 )
             )
 

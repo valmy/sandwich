@@ -28,6 +28,10 @@ class Settings(BaseSettings):
 
     base_currency: str = Field(default="USDT", description="Default base currency")
 
+    stablecoins_file: str = Field(
+        default="stablecoins.json", description="Cached stablecoins file"
+    )
+
     EXCLUDED_CURRENCIES: ClassVar[list[str]] = ["USDC", "FDUSD", "EUR"]
     QUOTE_CURRENCIES: ClassVar[list[str]] = ["FDUSD", "USDT", "USDC"]
 

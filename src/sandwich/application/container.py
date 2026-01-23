@@ -93,4 +93,5 @@ class DIContainer:
             self.pair_repository,
             self.market_repository,
             self.settings,
+            self.coingecko_client,
         )

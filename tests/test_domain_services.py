@@ -93,7 +93,7 @@ class TestMarketDataSorter:
         lines = ["BINANCE:BTCUSDT.P", "BINANCE:ETHUSDT.P"]
         item = {"symbol": "BTC"}
 
-        line = market_sorter.find_symbol_in_lines(item, lines, "USDT")
+        line = market_sorter.find_symbol_in_lines(item, lines, "USDT", set())
         assert line == "BINANCE:BTCUSDT.P"
 
     def test_sort_pairs_by_volume(self, market_sorter):
@@ -110,3 +110,29 @@ class TestMarketDataSorter:
         assert sorted_count == 2
         assert unsorted_count == 0
         assert sorted_data.startswith("BINANCE:BTCUSDT.P") # BTC has higher volume
+
+    def test_sort_pairs_by_volume_filters_stablecoins(self, market_sorter):
+        market_data = [
+            {"symbol": "ETH", "total_volume": 1000},
+            {"symbol": "BTC", "total_volume": 2000},
+            {"symbol": "USDC", "total_volume": 5000},
+            {"symbol": "DAI", "total_volume": 3000},
+        ]
+        lines = [
+            "BINANCE:BTCUSDT.P",
+            "BINANCE:ETHUSDT.P",
+            "BINANCE:USDCUSDT.P",
+            "BINANCE:DAIUSDT.P",
+        ]
+
+        stablecoins = {"USDC", "DAI", "USDT"}
+        sorted_data, sorted_count, unsorted_count = market_sorter.sort_pairs_by_volume(
+            market_data, lines, "USDT", "swap", False, stablecoins
+        )
+
+        # USDC and DAI should be filtered out
+        assert sorted_count == 2
+        assert "BINANCE:USDCUSDT.P" not in sorted_data
+        assert "BINANCE:DAIUSDT.P" not in sorted_data
+        assert "BINANCE:BTCUSDT.P" in sorted_data
+        assert "BINANCE:ETHUSDT.P" in sorted_data

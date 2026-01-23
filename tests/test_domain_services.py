@@ -30,7 +30,9 @@ class TestPairMatcher:
 
     def test_normalize_coin_name_no_prefix(self, pair_matcher):
         assert pair_matcher.normalize_coin_name("BTC") == "BTC"
-        assert pair_matcher.normalize_coin_name("kpepe") == "kpepe"  # Lowercase k doesn't match if not followed by uppercase
+        assert (
+            pair_matcher.normalize_coin_name("kpepe") == "kpepe"
+        )  # Lowercase k doesn't match if not followed by uppercase
 
     def test_match_pairs_with_normalization(self, pair_matcher):
         source_pairs = [
@@ -51,7 +53,7 @@ class TestPairMatcher:
                 market_type=MarketType.SWAP,
             )
         ]
-        
+
         result = pair_matcher.match_pairs(source_pairs, target_pairs)
         assert len(result.matched_pairs) == 1
         assert result.special_matches == 1
@@ -75,7 +77,7 @@ class TestPairMatcher:
                 market_type=MarketType.SWAP,
             )
         ]
-        
+
         result = pair_matcher.match_pairs(source_pairs, target_pairs)
         assert len(result.matched_pairs) == 1
         # BTC is normal match. But quote is different.
@@ -109,7 +111,7 @@ class TestMarketDataSorter:
 
         assert sorted_count == 2
         assert unsorted_count == 0
-        assert sorted_data.startswith("BINANCE:BTCUSDT.P") # BTC has higher volume
+        assert sorted_data.startswith("BINANCE:BTCUSDT.P")  # BTC has higher volume
 
     def test_sort_pairs_by_volume_filters_stablecoins(self, market_sorter):
         market_data = [

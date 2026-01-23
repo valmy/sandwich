@@ -50,14 +50,22 @@ class BaseAPIClient:
                 hostname in ["localhost", "127.0.0.1", "::1"]
                 or hostname.startswith("10.")
                 or hostname.startswith("192.168.")
-                or hostname.startswith("172.16.") or hostname.startswith("172.17.") 
-                or hostname.startswith("172.18.") or hostname.startswith("172.19.")
-                or hostname.startswith("172.20.") or hostname.startswith("172.21.")
-                or hostname.startswith("172.22.") or hostname.startswith("172.23.")
-                or hostname.startswith("172.24.") or hostname.startswith("172.25.")
-                or hostname.startswith("172.26.") or hostname.startswith("172.27.")
-                or hostname.startswith("172.28.") or hostname.startswith("172.29.")
-                or hostname.startswith("172.30.") or hostname.startswith("172.31.")
+                or hostname.startswith("172.16.")
+                or hostname.startswith("172.17.")
+                or hostname.startswith("172.18.")
+                or hostname.startswith("172.19.")
+                or hostname.startswith("172.20.")
+                or hostname.startswith("172.21.")
+                or hostname.startswith("172.22.")
+                or hostname.startswith("172.23.")
+                or hostname.startswith("172.24.")
+                or hostname.startswith("172.25.")
+                or hostname.startswith("172.26.")
+                or hostname.startswith("172.27.")
+                or hostname.startswith("172.28.")
+                or hostname.startswith("172.29.")
+                or hostname.startswith("172.30.")
+                or hostname.startswith("172.31.")
             ):
                 raise APIRequestError("Access to internal networks not allowed")
 
@@ -85,4 +93,6 @@ class BaseAPIClient:
                     time.sleep(2**attempt)
 
         logger.error(f"Max retries ({self.settings.max_retries}) exhausted")
-        raise APIRequestError(f"Request failed after {self.settings.max_retries} attempts")
+        raise APIRequestError(
+            f"Request failed after {self.settings.max_retries} attempts"
+        )

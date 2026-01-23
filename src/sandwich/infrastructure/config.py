@@ -79,7 +79,9 @@ class Settings(BaseSettings):
                     fallback_filename = f"{safe_base_currency}_perp{suffix}.txt"
                     safe_fallback = Path(fallback_filename).name
                     if safe_fallback != fallback_filename:
-                        raise ValueError("Invalid fallback filename: contains path separators")
+                        raise ValueError(
+                            "Invalid fallback filename: contains path separators"
+                        )
                     if (self.data_dir / safe_fallback).exists():
                         self._filename_cache[cache_key] = safe_fallback
                         return safe_fallback
@@ -112,3 +114,23 @@ class Settings(BaseSettings):
 
         suffix = "_hype" if is_hyperliquid else ""
         return f"sorted_{safe_base_currency}_{safe_market_type}{suffix}.txt"
+
+    def get_stablecoins_filename(self) -> str:
+        """Generate safe stablecoins filename to prevent path traversal"""
+        import re
+
+        safe_filename = re.sub(r"[^a-zA-Z0-9.]", "", self.stablecoins_file)
+
+        if not safe_filename:
+            raise ValueError(
+                "Invalid stablecoins_file: must contain alphanumeric characters"
+            )
+
+        if not safe_filename.endswith(".json"):
+            raise ValueError("Invalid stablecoins_file: must have .json extension")
+
+        safe_path = Path(safe_filename)
+        if safe_path.name != safe_filename:
+            raise ValueError("Invalid stablecoins_file: contains path separators")
+
+        return safe_filename

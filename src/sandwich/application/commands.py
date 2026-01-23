@@ -5,7 +5,7 @@ from sandwich.infrastructure.logging import get_logger
 from sandwich.repositories.pair_repository import PairRepository
 from sandwich.repositories.market_repository import MarketRepository
 from sandwich.domain.services import PairMatcher, MarketDataSorter
-from sandwich.domain.models import ExchangeId, MarketType, TradingPair
+from sandwich.domain.models import ExchangeId, MarketType
 from sandwich.domain.exceptions import SandwichError
 
 logger = get_logger(__name__)
@@ -240,7 +240,7 @@ class SortPairsCommand:
 
             # Fetch stablecoins for filtering
             stablecoins_file = str(
-                self.settings.data_dir / self.settings.stablecoins_file
+                self.settings.data_dir / self.settings.get_stablecoins_filename()
             )
             stablecoins = self.coingecko_client.fetch_stablecoins(stablecoins_file)
 

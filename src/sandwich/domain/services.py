@@ -170,6 +170,7 @@ class MarketDataSorter:
         lines: List[str],
         base_currency: str,
         stablecoins: Set[str],
+        check_excluded_currencies: bool = True,
     ) -> str:
         """
         Find matching trading pair line for a market data item.
@@ -179,6 +180,7 @@ class MarketDataSorter:
             lines: List of trading pair lines
             base_currency: Base currency to match
             stablecoins: Set of stablecoin symbols to filter out
+            check_excluded_currencies: Whether to filter excluded currencies
 
         Returns:
             Matching line or empty string if not found
@@ -205,10 +207,13 @@ class MarketDataSorter:
                 symbol == symbol_in_line.upper()
                 or ("1000" + symbol.upper()) == symbol_in_line.upper()
             ):
-                if not any(
-                    symbol == f"{curr}{base_currency}"
-                    for curr in self.settings.EXCLUDED_CURRENCIES
-                ):
+                if check_excluded_currencies:
+                    if not any(
+                        symbol == f"{curr}{base_currency}"
+                        for curr in self.settings.EXCLUDED_CURRENCIES
+                    ):
+                        return line
+                else:
                     return line
 
         return ""
@@ -280,20 +285,17 @@ class MarketDataSorter:
                 sorted_symbols.add(line)
             elif symbol_upper in stablecoins:
                 # Symbol was filtered because it's a stablecoin
-                # Find the matching line (without stablecoin filter) to exclude from unsorted
-                for pair_line in pairs_lines:
-                    symbol_in_line = self.remove_prefix_suffix(pair_line)
-                    expected_pair = symbol_upper + base_currency
-                    if (
-                        symbol_in_line.upper() == expected_pair
-                        or symbol_in_line.upper() == ("1000" + expected_pair)
-                    ):
-                        filtered_stablecoin_lines.add(pair_line)
-                        filtered_stablecoins_count += 1
-                        break
-                else:
-                    # Stablecoin not found in pairs (may be excluded currency)
-                    pass
+                # Find the matching line (without stablecoin or excluded currency filter) to exclude from unsorted
+                stablecoin_line = self.find_symbol_in_lines(
+                    item,
+                    pairs_lines,
+                    base_currency,
+                    set(),
+                    check_excluded_currencies=False,
+                )
+                if stablecoin_line:
+                    filtered_stablecoin_lines.add(stablecoin_line)
+                    filtered_stablecoins_count += 1
 
         unsorted_count = 0
         for line in pairs_lines:

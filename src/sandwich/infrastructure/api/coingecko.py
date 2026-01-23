@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Any
 from pathlib import Path
 import time
 
@@ -12,6 +12,60 @@ from sandwich.domain.exceptions import APIRequestError
 logger = get_logger(__name__)
 
 CACHE_EXPIRY_HOURS = 24
+
+HARDCODED_STABLECOINS = {
+    # USD stablecoins
+    "USDT",
+    "USDC",
+    "DAI",
+    "TUSD",
+    "USDD",
+    "USDP",
+    "USDe",
+    "FDUSD",
+    "PYUSD",
+    "cUSDT",
+    "cUSDC",
+    "aUSDT",
+    "aUSDC",
+    "USDC.E",
+    "USDT.E",
+    # EUR stablecoins
+    "EURS",
+    "EURC",
+    "EUROC",
+    "EURT",
+    "sEUR",
+    # GBP stablecoins
+    "GBPT",
+    "GBPC",
+    # CNY stablecoins
+    "CNHT",
+    "CNYT",
+    # JPY stablecoins
+    "JPYT",
+    "JPYC",
+    # Other stablecoins
+    "USDX",
+    "DYAD",
+    "GHO",
+    "crvUSD",
+    "LUSD",
+    "RAI",
+    "sUSD",
+    "USDN",
+    "USDS",
+    "USTC",
+    "HAY",
+    "BOB",
+    "SUSD",
+    "USDK",
+    "USX",
+    "USDV",
+    "VAI",
+    "ZUSD",
+    "USD1",
+}
 
 
 class CoinGeckoClient(BaseAPIClient):
@@ -60,16 +114,26 @@ class CoinGeckoClient(BaseAPIClient):
 
         return market_data
 
-    def _save_to_file(self, market_data: List[MarketData], file_path: str) -> None:
-        """Save market data to JSON file"""
-        logger.info(f"Saving market data to {file_path}")
+    def _save_json_to_file(
+        self, data: Any, file_path: str, data_description: str
+    ) -> None:
+        """Save JSON data to file"""
+        logger.info(f"Saving {data_description} to {file_path}")
 
         try:
             with open(file_path, "w") as f:
-                json.dump([m.model_dump() for m in market_data], f)
-            logger.info(f"Successfully saved {len(market_data)} items to {file_path}")
+                json.dump(data, f)
+            logger.info(
+                f"Successfully saved {len(data) if hasattr(data, '__len__') else 'data'} {data_description} to {file_path}"
+            )
         except (IOError, OSError) as e:
-            raise APIRequestError(f"Failed to save market data: {e}")
+            raise APIRequestError(f"Failed to save {data_description}: {e}")
+
+    def _save_to_file(self, market_data: List[MarketData], file_path: str) -> None:
+        """Save market data to JSON file"""
+        self._save_json_to_file(
+            [m.model_dump() for m in market_data], file_path, "market data"
+        )
 
     def fetch_stablecoins(self, file_path: Optional[str] = None) -> Set[str]:
         """
@@ -106,62 +170,7 @@ class CoinGeckoClient(BaseAPIClient):
 
         # Use hardcoded list of common stablecoins (CoinGecko free API doesn't support categories)
         logger.info("Using hardcoded list of common stablecoins")
-        stablecoins = {
-            # USD stablecoins
-            "USDT",
-            "USDC",
-            "DAI",
-            "TUSD",
-            "USDD",
-            "USDP",
-            "USDe",
-            "FDUSD",
-            "PYUSD",
-            "cUSDT",
-            "cUSDC",
-            "aUSDT",
-            "aUSDC",
-            "USDC.E",
-            "USDT.E",
-            # EUR stablecoins
-            "EURS",
-            "EURC",
-            "EUROC",
-            "EURT",
-            "sEUR",
-            # GBP stablecoins
-            "GBPT",
-            "GBPC",
-            # CNY stablecoins
-            "CNHT",
-            "CNYT",
-            # JPY stablecoins
-            "JPYT",
-            "JPYC",
-            # Other stablecoins
-            "XAUT",
-            "USDX",
-            "DYAD",
-            "GHO",
-            "crvUSD",
-            "LUSD",
-            "RAI",
-            "sUSD",
-            "USDN",
-            "USDS",
-            "USTC",
-            "HAY",
-            "BOB",
-            "Fei",
-            "OHM",
-            "SPELL",
-            "SUSD",
-            "USDK",
-            "USX",
-            "USDV",
-            "VAI",
-            "ZUSD",
-        }
+        stablecoins = HARDCODED_STABLECOINS
 
         logger.info(f"Using {len(stablecoins)} stablecoins from hardcoded list")
 
@@ -173,11 +182,4 @@ class CoinGeckoClient(BaseAPIClient):
 
     def _save_stablecoins_to_file(self, stablecoins: List[str], file_path: str) -> None:
         """Save stablecoins list to JSON file"""
-        logger.info(f"Saving stablecoins to {file_path}")
-
-        try:
-            with open(file_path, "w") as f:
-                json.dump(stablecoins, f)
-            logger.info(f"Successfully saved {len(stablecoins)} stablecoins to {file_path}")
-        except (IOError, OSError) as e:
-            raise APIRequestError(f"Failed to save stablecoins: {e}")
+        self._save_json_to_file(stablecoins, file_path, "stablecoins")

@@ -2,6 +2,8 @@
 
 from typing import TypedDict, NotRequired
 
+from sandwich.domain.models import ExchangeId
+
 
 class ExchangeConfig(TypedDict):
     """Configuration for a single exchange."""
@@ -39,4 +41,14 @@ def get_config(exchange_id: str) -> ExchangeConfig:
     """
     if exchange_id not in EXCHANGE_CONFIG:
         raise ValueError(f"Unknown exchange: {exchange_id}")
+
+    # Validate that exchange exists in ExchangeId enum
+    try:
+        ExchangeId(exchange_id)
+    except ValueError:
+        raise ValueError(
+            f"Exchange '{exchange_id}' not supported in ExchangeId enum. "
+            f"Valid options: {[e.value for e in ExchangeId]}"
+        )
+
     return EXCHANGE_CONFIG[exchange_id]

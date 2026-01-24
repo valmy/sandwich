@@ -7,7 +7,7 @@ from .base import BaseAPIClient
 from sandwich.infrastructure.config import Settings
 from sandwich.infrastructure.logging import get_logger
 from sandwich.domain.models import MarketData
-from sandwich.domain.exceptions import APIRequestError
+from sandwich.domain.exceptions import APIRequestError, FileOperationError
 
 logger = get_logger(__name__)
 
@@ -71,13 +71,14 @@ HARDCODED_STABLECOINS = {
 class CoinGeckoClient(BaseAPIClient):
     """CoinGecko API client"""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, cache_manager: Optional[Any] = None) -> None:
         super().__init__(settings)
         self.api_url = settings.coingecko_api_url
+        self.cache_manager = cache_manager
 
     def fetch_market_data(self, file_path: Optional[str] = None) -> List[MarketData]:
         """
-        Fetch market data from CoinGecko API.
+        Fetch market data from CoinGecko API with caching.
 
         Args:
             file_path: Optional file path to save data to
@@ -88,6 +89,16 @@ class CoinGeckoClient(BaseAPIClient):
         Raises:
             APIRequestError: If API request fails
         """
+        # Try to get data from cache
+        if self.cache_manager:
+            cached_data = self.cache_manager.get(self.fetch_market_data, file_path)
+            if cached_data is not None:
+                logger.info("Loaded market data from cache")
+                market_data = [MarketData(**item) for item in cached_data]
+                if file_path:
+                    self._save_to_file(market_data, file_path)
+                return market_data
+
         all_data: list[dict] = []
 
         for page in range(1, self.settings.pages_to_fetch + 1):
@@ -96,18 +107,31 @@ class CoinGeckoClient(BaseAPIClient):
 
             response = self.make_request(page_url)
             if response is None or response.status_code != 200:
-                raise APIRequestError(f"Failed to fetch page {page}")
+                raise APIRequestError(
+                    endpoint=page_url,
+                    operation="fetch market data",
+                    status_code=response.status_code if response else None
+                )
 
             try:
                 data = response.json()
             except ValueError as e:
-                raise APIRequestError(f"Invalid JSON response from page {page}: {e}")
+                raise APIRequestError(
+                    endpoint=page_url,
+                    operation="parse market data response",
+                    details=str(e)
+                )
             all_data.extend(data)
             logger.debug(f"Fetched {len(data)} items from page {page}")
 
         logger.info(f"Total items fetched: {len(all_data)}")
 
         market_data = [MarketData(**item) for item in all_data[:500]]
+
+        # Cache the raw dict data for easy serialization
+        if self.cache_manager:
+            raw_data = [item.model_dump() for item in market_data]
+            self.cache_manager.set(self.fetch_market_data, raw_data, file_path)
 
         if file_path:
             self._save_to_file(market_data, file_path)
@@ -127,7 +151,11 @@ class CoinGeckoClient(BaseAPIClient):
                 f"Successfully saved {len(data) if hasattr(data, '__len__') else 'data'} {data_description} to {file_path}"
             )
         except (IOError, OSError) as e:
-            raise APIRequestError(f"Failed to save {data_description}: {e}")
+            raise FileOperationError(
+                filename=file_path,
+                operation="save",
+                details=str(e)
+            )
 
     def _save_to_file(self, market_data: List[MarketData], file_path: str) -> None:
         """Save market data to JSON file"""

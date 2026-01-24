@@ -1,10 +1,11 @@
 import typer
 
 from .container import DIContainer
+from .output import OutputFormat, OutputFormatter
 from sandwich.config.exchanges import get_config
 from sandwich.domain.models import ExchangeId
 from sandwich.domain.validators import parse_base_and_market_type
-from sandwich.domain.exceptions import DataValidationError
+from sandwich.domain.exceptions import ValidationError
 from sandwich.infrastructure.logging import get_logger
 
 logger = get_logger(__name__)
@@ -14,21 +15,91 @@ app = typer.Typer()
 
 @app.command()
 def main(
-    base: str = "usdtperp",
-    fetch: bool = False,
-    get_pairs: bool = False,
-    exchange: str = typer.Option("binance", "--exchange", "-e", help="Exchange to use"),
+    base: str = typer.Option(
+        "usdtperp",
+        "--base",
+        "-b",
+        help=(
+            "Base currency and market type combined. For swap/perpetual markets, "
+            "append 'perp' to the base currency. For spot markets, use just the "
+            "currency code. Examples:\n"
+            "  - 'usdtperp' = USDT base currency, swap/perpetual market\n"
+            "  - 'usdc' = USDC base currency, spot market\n"
+            "  - 'fdusdperp' = FDUSD base currency, swap/perpetual market"
+        ),
+    ),
+    fetch: bool = typer.Option(
+        False,
+        "--fetch",
+        "-f",
+        help=(
+            "Fetch latest market data (price, volume, market cap) from CoinGecko API. "
+            "This data is used for sorting pairs by metrics like market cap or volume."
+        ),
+    ),
+    get_pairs: bool = typer.Option(
+        False,
+        "--get-pairs",
+        "-g",
+        help=(
+            "Fetch and update trading pairs from the specified exchange. "
+            "Pairs are filtered by the base currency and market type, "
+            "and only active markets are included."
+        ),
+    ),
+    exchange: str = typer.Option(
+        "binance",
+        "--exchange",
+        "-e",
+        help=(
+            "Exchange to use for fetching pairs. Supported exchanges:\n"
+            "  - binance: Binance exchange (default)\n"
+            "  - hyperliquid: Hyperliquid exchange (filters pairs against Binance)\n"
+            "  - aster: Aster exchange (filters pairs against Binance)\n"
+            "Note: Exchanges with 'match_with' configuration will filter pairs "
+            "against the specified exchange's pairs."
+        ),
+    ),
+    output: OutputFormat = typer.Option(
+        OutputFormat.TEXT,
+        "--output",
+        "-o",
+        help=(
+            "Output format. Supported formats:\n"
+            "  - text: Plain text output (default)\n"
+            "  - json: Structured JSON output"
+        ),
+    ),
 ) -> None:
     """
-    Main CLI command.
+    CLI application to manage TradingView-compatible cryptocurrency trading pair lists.
 
-    Args:
-        base: Base currency and market type (e.g., usdtperp, usdc, fdusd)
-        fetch: Fetch market data from CoinGecko
-        get_pairs: Get pairs from exchange
-        exchange: Exchange to use (binance, hyperliquid, aster, etc.)
+    This application fetches trading pairs from supported exchanges, matches them
+    across platforms (when configured), and sorts them by market metrics (market cap,
+    volume) using CoinGecko data.
+
+    Main Features:
+        - Fetch and update trading pairs from exchanges
+        - Match pairs across exchanges (e.g., Hyperliquid pairs matching Binance)
+        - Sort pairs by market cap or volume
+        - Fetch and update market data from CoinGecko
+        - Generate TradingView-compatible watchlists
+
+    Examples:
+        Fetch and update Binance USDT perpetual pairs:
+        $ uv run sandwich --base usdtperp --get-pairs
+
+        Fetch and update Hyperliquid USDC perpetual pairs:
+        $ uv run sandwich --base usdcperp --get-pairs --exchange hyperliquid
+
+        Only sort existing USDT perpetual pairs by volume:
+        $ uv run sandwich --base usdtperp
+
+        Fetch market data and update pairs:
+        $ uv run sandwich --fetch --get-pairs
     """
     container = DIContainer()
+    formatter = OutputFormatter(output)
 
     try:
         # Validate exchange
@@ -74,14 +145,28 @@ def main(
             f"Exchange: {exchange}"
         )
 
+        if output == OutputFormat.JSON:
+            success_data = {
+                "base": base,
+                "exchange": exchange,
+                "fetch": fetch,
+                "get_pairs": get_pairs,
+                "message": "Operation completed successfully",
+            }
+            typer.echo(formatter.format_success(success_data))
+
     except typer.BadParameter:
         # Let typer handle bad parameter errors
         raise
-    except DataValidationError as e:
+    except ValidationError as e:
         logger.error(f"Validation error: {e}")
+        if output == OutputFormat.JSON:
+            typer.echo(formatter.format_error(e, "Validation failed"))
         raise typer.Exit(code=1)
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
+        if output == OutputFormat.JSON:
+            typer.echo(formatter.format_error(e, "Operation failed"))
         raise typer.Exit(code=1)
 
 

@@ -3,6 +3,7 @@ from pathlib import Path
 from sandwich.infrastructure.config import Settings
 from sandwich.infrastructure.logging import setup_logging, get_logger
 from sandwich.infrastructure.filesystem import FilesystemOperations
+from sandwich.infrastructure.cache import CacheManager
 from sandwich.infrastructure.api.coingecko import CoinGeckoClient
 from sandwich.infrastructure.api.exchanges import ExchangeClient
 from sandwich.repositories.pair_repository import PairRepository
@@ -40,8 +41,9 @@ class DIContainer:
         """Initialize infrastructure components"""
         self.logger.debug("Initializing infrastructure")
 
+        self.cache_manager = CacheManager(self.settings)
         self.filesystem = FilesystemOperations(self.settings)
-        self.coingecko_client = CoinGeckoClient(self.settings)
+        self.coingecko_client = CoinGeckoClient(self.settings, self.cache_manager)
 
     def _init_repositories(self) -> None:
         """Initialize repositories"""
@@ -55,7 +57,12 @@ class DIContainer:
         self.logger.debug("Initializing domain services")
 
         self.pair_matcher = PairMatcher(self.settings)
-        self.market_sorter = MarketDataSorter(self.settings)
+        self.market_sorter = MarketDataSorter(
+            self.settings,
+            self.coingecko_client,
+            self.market_repository,
+            self.pair_repository
+        )
 
     def _init_commands(self) -> None:
         """Initialize use case commands"""
@@ -72,7 +79,7 @@ class DIContainer:
 
         if exchange_id not in self._exchange_clients:
             self._exchange_clients[exchange_id] = ExchangeClient(
-                self.settings, exchange_id
+                self.settings, exchange_id, self.cache_manager
             )
 
         return self._exchange_clients[exchange_id]
@@ -91,7 +98,4 @@ class DIContainer:
         return SortPairsCommand(
             self.market_sorter,
             self.pair_repository,
-            self.market_repository,
-            self.settings,
-            self.coingecko_client,
         )

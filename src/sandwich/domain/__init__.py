@@ -3,8 +3,10 @@ from .exceptions import (
     FileOperationError,
     APIRequestError,
     ConfigurationError,
-    DataValidationError,
+    ValidationError,
     ExchangeError,
+    PairMatchingError,
+    MarketDataError,
 )
 from .models import MarketType, ExchangeId, TradingPair, MarketData, PairMatchResult
 from .validators import (
@@ -19,7 +21,9 @@ __all__ = [
     "FileOperationError",
     "APIRequestError",
     "ConfigurationError",
-    "DataValidationError",
+    "ValidationError",
+    "PairMatchingError",
+    "MarketDataError",
     "ExchangeError",
     "MarketType",
     "ExchangeId",

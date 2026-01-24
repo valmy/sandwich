@@ -10,6 +10,35 @@ runner = CliRunner()
 
 @pytest.mark.unit
 class TestMainCLI:
+    def test_output_option_json_format(self):
+        """Test that --output json produces valid JSON output."""
+        with (
+            patch("sandwich.application.cli.DIContainer") as mock_container_class,
+        ):
+            mock_container = mock_container_class.return_value
+
+            result = runner.invoke(app, ["--base", "usdtperp", "--output", "json"])
+
+            assert result.exit_code == 0
+            # Check that output is valid JSON
+            assert "{" in result.output
+            assert "}" in result.output
+            assert "success" in result.output
+            assert "true" in result.output
+
+    def test_output_option_text_format(self):
+        """Test that --output text produces plain text output."""
+        with (
+            patch("sandwich.application.cli.DIContainer") as mock_container_class,
+        ):
+            mock_container = mock_container_class.return_value
+
+            result = runner.invoke(app, ["--base", "usdtperp", "--output", "text"])
+
+            assert result.exit_code == 0
+            # Should not contain JSON structure
+            assert "{" not in result.output
+            assert "}" not in result.output
     def test_default_parameters(self):
         with (
             patch("sandwich.application.cli.DIContainer") as mock_container_class,

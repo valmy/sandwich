@@ -13,6 +13,8 @@ class FilesystemOperations:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        # Precompute exchange prefixes for faster checking
+        self.exchange_prefixes = {exchange.value.upper(): exchange for exchange in ExchangeId}
 
     def save_pairs_for_tradingview(
         self,
@@ -45,37 +47,39 @@ class FilesystemOperations:
         exchange_id_upper = exchange_id.upper()
 
         try:
+            # Join all lines first and write once for better performance
+            lines = []
+            for pair in pairs:
+                # Check if pair already has valid exchange prefix
+                has_exchange_prefix = False
+                if ":" in pair:
+                    prefix = pair.split(":", 1)[0].upper()
+                    if prefix in self.exchange_prefixes:
+                        has_exchange_prefix = True
+                        lines.append(f"{pair}\n")
+                        continue
+                
+                # Format as TradingView format
+                symbol = pair.replace("/", "")
+                for quote_currency in self.settings.QUOTE_CURRENCIES:
+                    if symbol.endswith(f":{quote_currency}"):
+                        symbol = symbol[: -len(f":{quote_currency}")]
+                        break
+                lines.append(f"{exchange_id_upper}:{symbol}{type_str}\n")
+            
             with open(filepath, "w", encoding="utf-8") as f:
-                for pair in pairs:
-                    # If pair already contains exchange prefix, use it as-is
-                    # Check for valid exchange prefixes from ExchangeId enum
-                    # CCXT format like "BTC/USDT:USDT" has colon but not exchange prefix
-                    has_exchange_prefix = False
-                    for exchange in ExchangeId:
-                        if pair.startswith(f"{exchange.value.upper()}:"):
-                            has_exchange_prefix = True
-                            break
-
-                    if has_exchange_prefix:
-                        tradingview_format = f"{pair}\n"
-                    else:
-                        # Otherwise, format it (convert from CCXT format)
-                        # Remove quote currency suffixes using suffix matching (not replace)
-                        # to avoid issues with currency names appearing within other names
-                        symbol = pair.replace("/", "")
-                        for quote_currency in self.settings.QUOTE_CURRENCIES:
-                            if symbol.endswith(f":{quote_currency}"):
-                                symbol = symbol[: -len(f":{quote_currency}")]
-                                break
-                        tradingview_format = f"{exchange_id_upper}:{symbol}{type_str}\n"
-                    f.write(tradingview_format)
+                f.writelines(lines)
 
             logger.info(
                 f"Saved {len(pairs)} {exchange_id} {base_currency} {market_type.value} "
                 f"pairs to {filename}"
             )
         except (IOError, OSError) as e:
-            raise FileOperationError(f"Failed to save pairs to {filename}: {e}")
+            raise FileOperationError(
+                filename=filename,
+                operation="save pairs",
+                details=str(e)
+            )
 
     def load_pairs(self, filename: str) -> List[str]:
         """
@@ -98,11 +102,16 @@ class FilesystemOperations:
 
         try:
             with open(filepath, "r", encoding="utf-8") as f:
-                pairs = [line.strip() for line in f.readlines() if line.strip()]
+                # Use generator expression for memory efficiency
+                pairs = [line.strip() for line in f if line.strip()]
             logger.info(f"Loaded {len(pairs)} pairs from {filename}")
             return pairs
         except (IOError, OSError) as e:
-            raise FileOperationError(f"Failed to read {filename}: {e}")
+            raise FileOperationError(
+                filename=filename,
+                operation="read pairs",
+                details=str(e)
+            )
 
     def save_sorted_pairs(
         self,
@@ -133,7 +142,11 @@ class FilesystemOperations:
                 f.write(sorted_data)
             logger.info(f"Saved sorted pairs to {filename}")
         except (IOError, OSError) as e:
-            raise FileOperationError(f"Failed to save sorted pairs: {e}")
+            raise FileOperationError(
+                filename=filename,
+                operation="save sorted pairs",
+                details=str(e)
+            )
 
     def load_market_data(self) -> list[dict]:
         """
@@ -155,11 +168,19 @@ class FilesystemOperations:
 
         try:
             with open(filepath, "r", encoding="utf-8") as f:
-                data = json.loads(f.read())
+                data = json.load(f)  # More efficient than json.loads(f.read())
 
             logger.info(f"Loaded {len(data)} market data items")
             return data[:500]  # Support up to 500 items with 2 pages
         except json.JSONDecodeError as e:
-            raise FileOperationError(f"Invalid JSON in market data file: {e}")
+            raise FileOperationError(
+                filename=self.settings.marketcap_file,
+                operation="parse market data",
+                details=str(e)
+            )
         except (IOError, OSError) as e:
-            raise FileOperationError(f"Failed to read market data: {e}")
+            raise FileOperationError(
+                filename=self.settings.marketcap_file,
+                operation="read market data",
+                details=str(e)
+            )

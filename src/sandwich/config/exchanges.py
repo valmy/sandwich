@@ -23,6 +23,22 @@ EXCHANGE_CONFIG: dict[str, ExchangeConfig] = {
         "quote": "USDC",
         "match_with": "binance",
     },
+    "bybit": {
+        "quote": "USDT",
+        "match_with": "binance",
+    },
+    "okx": {
+        "quote": "USDT",
+        "match_with": "binance",
+    },
+    "kucoin": {
+        "quote": "USDT",
+        "match_with": "binance",
+    },
+    "gateio": {
+        "quote": "USDT",
+        "match_with": "binance",
+    },
 }
 
 

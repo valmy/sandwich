@@ -1,7 +1,7 @@
 [project]
 name = "sandwich"
-version = "0.2.0"
-description = "Add your description here"
+version = "0.3.0"
+description = "Sandwich is a Python CLI application that fetches and maintains TradingView-compatible trading pair lists from cryptocurrency exchanges. It supports multiple exchanges (Binance, Hyperliquid, Aster), integrates with CoinGecko for volume data, and allows sorting pairs by market metrics. The application uses uv for dependency management and supports different base currencies (USDT, USDC, FDUSD) and market types (spot, swap/perpetual)."
 authors = [
     { name = "T. Budiman", email = "tbudiman@gmail.com" }
 ]

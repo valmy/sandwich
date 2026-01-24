@@ -6,7 +6,11 @@ from sandwich.repositories.pair_repository import PairRepository
 from sandwich.repositories.market_repository import MarketRepository
 from sandwich.domain.services import PairMatcher, MarketDataSorter
 from sandwich.domain.models import ExchangeId, MarketType
-from sandwich.domain.exceptions import SandwichError
+from sandwich.domain.exceptions import (
+    MarketDataError,
+    ExchangeError,
+    PairMatchingError,
+)
 from sandwich.config.exchanges import get_config
 
 logger = get_logger(__name__)
@@ -35,7 +39,10 @@ class FetchMarketDataCommand:
             logger.info(f"Successfully saved {len(market_data)} market data items")
         except Exception as e:
             logger.error(f"Failed to fetch market data: {e}")
-            raise SandwichError(f"Failed to fetch market data: {e}")
+            raise MarketDataError(
+                operation="fetch and save market data",
+                details=str(e)
+            )
 
 
 class FetchPairsCommand:
@@ -72,7 +79,11 @@ class FetchPairsCommand:
             logger.info(f"Successfully saved {len(pairs)} pairs")
         except Exception as e:
             logger.error(f"Failed to fetch pairs: {e}")
-            raise SandwichError(f"Failed to fetch pairs: {e}")
+            raise ExchangeError(
+                exchange_id=self.exchange_client.exchange_id.value,
+                operation=f"fetch {base_currency} {market_type.value} pairs",
+                details=str(e)
+            )
 
 
 class MatchPairsCommand:
@@ -172,7 +183,11 @@ class MatchPairsCommand:
                     logger.error(
                         f"Failed to fetch pairs from {target_exchange.value}: {e}"
                     )
-                    raise SandwichError(f"Failed to fetch target pairs: {e}")
+                    raise ExchangeError(
+                        exchange_id=target_exchange.value,
+                        operation=f"fetch {target_base} {source_market_type.value} pairs",
+                        details=str(e)
+                    )
 
             result = self.pair_matcher.match_pairs(
                 source_pairs_ccxt,
@@ -213,7 +228,12 @@ class MatchPairsCommand:
 
         except Exception as e:
             logger.error(f"Failed to match pairs: {e}")
-            raise SandwichError(f"Failed to match pairs: {e}")
+            raise PairMatchingError(
+                source_exchange=target_exchange_id.value,
+                target_exchange=config.get("match_with", "self"),
+                reason="Pair matching operation failed",
+                details=str(e)
+            )
 
 
 class SortPairsCommand:
@@ -223,15 +243,9 @@ class SortPairsCommand:
         self,
         market_sorter: MarketDataSorter,
         pair_repository: PairRepository,
-        market_repository: MarketRepository,
-        settings: Settings,
-        coingecko_client: CoinGeckoClient,
     ) -> None:
         self.market_sorter = market_sorter
         self.pair_repository = pair_repository
-        self.market_repository = market_repository
-        self.settings = settings
-        self.coingecko_client = coingecko_client
 
     def execute(
         self, base_currency: str, market_type: str, is_hyperliquid: bool = False
@@ -243,29 +257,11 @@ class SortPairsCommand:
                 f"({'hyperliquid' if is_hyperliquid else 'regular'})"
             )
 
-            # Fetch stablecoins for filtering
-            stablecoins_file = str(
-                self.settings.data_dir / self.settings.get_stablecoins_filename()
-            )
-            stablecoins = self.coingecko_client.fetch_stablecoins(stablecoins_file)
-
-            market_data = [
-                m.model_dump() for m in self.market_repository.load_market_data()
-            ]
-
-            filename = self.settings.get_pairs_filename(
-                base_currency, market_type, is_hyperliquid
-            )
-            pairs_lines = self.pair_repository.load_pair_lines(filename)
-
             sorted_data, sorted_count, unsorted_count = (
                 self.market_sorter.sort_pairs_by_volume(
-                    market_data,
-                    pairs_lines,
                     base_currency,
                     market_type,
                     is_hyperliquid,
-                    stablecoins,
                 )
             )
 
@@ -279,4 +275,7 @@ class SortPairsCommand:
 
         except Exception as e:
             logger.error(f"Failed to sort pairs: {e}")
-            raise SandwichError(f"Failed to sort pairs: {e}")
+            raise MarketDataError(
+                operation=f"sort {base_currency} {market_type} pairs",
+                details=str(e)
+            )

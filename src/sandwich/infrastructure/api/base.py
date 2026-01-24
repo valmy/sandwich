@@ -34,15 +34,27 @@ class BaseAPIClient:
 
         parsed = urlparse(url)
         if not parsed.scheme or parsed.scheme not in ["http", "https"]:
-            raise APIRequestError("Invalid URL scheme")
+            raise APIRequestError(
+                endpoint=url,
+                operation="validate URL",
+                details="Invalid URL scheme - only HTTP/HTTPS allowed"
+            )
         if not parsed.netloc:
-            raise APIRequestError("Invalid URL")
+            raise APIRequestError(
+                endpoint=url,
+                operation="validate URL",
+                details="Invalid URL - missing network location"
+            )
 
         try:
             # Check if hostname is an IP address
             ip = ipaddress.ip_address(parsed.hostname or "")
             if ip.is_private or ip.is_loopback or ip.is_link_local:
-                raise APIRequestError("Access to internal networks not allowed")
+                raise APIRequestError(
+                    endpoint=url,
+                    operation="validate URL",
+                    details="Access to internal networks not allowed"
+                )
         except ValueError:
             # Not an IP address, check for localhost/internal hostnames
             hostname = (parsed.hostname or "").lower()
@@ -67,7 +79,11 @@ class BaseAPIClient:
                 or hostname.startswith("172.30.")
                 or hostname.startswith("172.31.")
             ):
-                raise APIRequestError("Access to internal networks not allowed")
+                raise APIRequestError(
+                    endpoint=url,
+                    operation="validate URL",
+                    details="Access to internal networks not allowed"
+                )
 
         for attempt in range(self.settings.max_retries):
             try:
@@ -94,5 +110,7 @@ class BaseAPIClient:
 
         logger.error(f"Max retries ({self.settings.max_retries}) exhausted")
         raise APIRequestError(
-            f"Request failed after {self.settings.max_retries} attempts"
+            endpoint=url,
+            operation="make API request",
+            details=f"Request failed after {self.settings.max_retries} attempts"
         )

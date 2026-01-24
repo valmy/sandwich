@@ -110,11 +110,13 @@ class MatchPairsCommand:
 
             if "match_with" in config:
                 # Exchange needs pair matching against another exchange
+                match_with_exchange = config["match_with"]
                 logger.info(
-                    f"Matching {target_exchange_id.value} pairs against {config['match_with']}"
+                    f"Matching {target_exchange_id.value} pairs against {match_with_exchange}"
                 )
+                match_with_config = get_config(match_with_exchange)
                 source_base = target_base_currency
-                target_base = config["quote"]
+                target_base = match_with_config["quote"]
             else:
                 # Exchange stands alone (TradingView-supported)
                 logger.info(f"Processing {target_exchange_id.value} pairs")

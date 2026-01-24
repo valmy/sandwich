@@ -1,6 +1,15 @@
 """Exchange configuration for pair matching."""
 
-EXCHANGE_CONFIG: dict[str, dict] = {
+from typing import TypedDict, NotRequired
+
+
+class ExchangeConfig(TypedDict):
+    """Configuration for a single exchange."""
+    quote: str
+    match_with: NotRequired[str]
+
+
+EXCHANGE_CONFIG: dict[str, ExchangeConfig] = {
     "binance": {
         "quote": "USDT",
     },
@@ -15,7 +24,7 @@ EXCHANGE_CONFIG: dict[str, dict] = {
 }
 
 
-def get_config(exchange_id: str) -> dict:
+def get_config(exchange_id: str) -> ExchangeConfig:
     """
     Get configuration for an exchange.
 
@@ -23,7 +32,7 @@ def get_config(exchange_id: str) -> dict:
         exchange_id: Exchange identifier (e.g., "binance", "hyperliquid")
 
     Returns:
-        Dict with exchange configuration
+        Exchange configuration dict
 
     Raises:
         ValueError: If exchange_id is not found

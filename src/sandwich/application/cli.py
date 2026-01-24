@@ -1,6 +1,7 @@
 import typer
 
 from .container import DIContainer
+from sandwich.config.exchanges import get_config
 from sandwich.domain.models import ExchangeId
 from sandwich.domain.validators import parse_base_and_market_type
 from sandwich.domain.exceptions import DataValidationError
@@ -49,46 +50,33 @@ def main(
         if fetch:
             container.fetch_market_data_command.execute()
 
+        config = get_config(exchange)
+        needs_matching = "match_with" in config
+
+        # Fetch pairs if requested
         if get_pairs:
-            from sandwich.config.exchanges import get_config
+            fetch_cmd = container.get_fetch_pairs_command(exchange_id)
+            fetch_cmd.execute(base_currency, market_type)
 
-            config = get_config(exchange)
-
-            if "match_with" in config:
-                # Exchange needs pair matching against another exchange
-                fetch_source_cmd = container.get_fetch_pairs_command(exchange_id)
-                fetch_source_cmd.execute(base_currency, market_type)
-
-                match_cmd = container.get_match_pairs_command()
-                match_cmd.execute(exchange_id, base_currency, market_type)
-
-                sort_cmd = container.get_sort_pairs_command()
-                sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=True)
-            else:
-                # Exchange stands alone (TradingView-supported)
-                fetch_cmd = container.get_fetch_pairs_command(exchange_id)
-                fetch_cmd.execute(base_currency, market_type)
-
-                sort_cmd = container.get_sort_pairs_command()
-                sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=False)
-
-        # Handle pair matching without fetch (legacy use case)
-        if not get_pairs and exchange_id in [ExchangeId.HYPERLIQUID, ExchangeId.ASTER]:
-            from sandwich.config.exchanges import get_config
-
-            config = get_config(exchange)
-            if "match_with" in config:
-                match_cmd = container.get_match_pairs_command()
-                match_cmd.execute(exchange_id, base_currency, market_type)
-
-                sort_cmd = container.get_sort_pairs_command()
-                sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=True)
+        # Handle matching (with or without fetch)
+        if needs_matching:
+            match_cmd = container.get_match_pairs_command()
+            match_cmd.execute(exchange_id, base_currency, market_type)
+            sort_cmd = container.get_sort_pairs_command()
+            sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=True)
+        elif get_pairs:
+            # Only sort for non-matching exchanges when fetch was done
+            sort_cmd = container.get_sort_pairs_command()
+            sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=False)
 
         logger.info(
             f"Completed: {base} Fetch: {fetch} Get Pairs: {get_pairs} "
             f"Exchange: {exchange}"
         )
 
+    except typer.BadParameter:
+        # Let typer handle bad parameter errors
+        raise
     except DataValidationError as e:
         logger.error(f"Validation error: {e}")
         raise typer.Exit(code=1)

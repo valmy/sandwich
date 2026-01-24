@@ -14,10 +14,10 @@ Options:
                        Get volume data from CoinGecko
 
   --get-pairs/--no-get-pairs  [default: no-get-pairs]
-                       Get pair data from Binance
+                       Get pair data from exchange
 
-  --hyperliquid/--no-hyperliquid  [default: no-hyperliquid]
-                       Use Hyperliquid exchange data instead of Binance
+  --exchange, -e       Exchange to use [default: binance]
+                       Options: binance, hyperliquid, aster, etc.
 
 ### Examples:
 
@@ -25,11 +25,14 @@ Options:
 # Fetch USDC pairs from Binance and sort with CoinGecko volume data
 uv run sandwich --base usdc --fetch --get-pairs
 
-# Work with USDT perpetual pairs
+# Work with USDT perpetual pairs from Binance
 uv run sandwich --base usdtperp --get-pairs
 
-# Fetch and process Hyperliquid exchange data
-uv run sandwich --base usdtperp --hyperliquid
+# Fetch and process Hyperliquid exchange data (matches against Binance)
+uv run sandwich --base usdcperp --get-pairs --exchange hyperliquid
+
+# Fetch and process Aster exchange data (matches against Binance)
+uv run sandwich --base usdcperp --get-pairs --exchange aster
 
 # Only sort existing pair data (no fetching)
 uv run sandwich --base fdusd

@@ -31,7 +31,7 @@ echo "✓ USDT perp pairs generated (usdt_swap_pairs.txt)"
 echo
 
 echo "Step 3: Filtering USDT perp pairs against Hyperliquid availability..."
-if ! uv run sandwich --base usdtperp --hyperliquid; then
+if ! uv run sandwich --base usdtperp --exchange hyperliquid; then
     echo "Error: Failed to filter pairs against Hyperliquid" >&2
     exit 1
 fi

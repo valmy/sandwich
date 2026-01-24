@@ -145,4 +145,39 @@
 3. **Sourcegraph Cody**: Follow standard Python coding rules
 
 ## Project Context
-This is a Python CLI application that fetches and maintains TradingView-compatible trading pair lists from cryptocurrency exchanges (Binance, Hyperliquid). It integrates with CoinGecko for volume data and allows sorting pairs by market metrics. The application uses uv for dependency management and supports different base currencies (USDT, USDC, FDUSD) and market types (spot, swap/perpetual).
+This is a Python CLI application that fetches and maintains TradingView-compatible trading pair lists from cryptocurrency exchanges. It supports multiple exchanges (Binance, Hyperliquid, Aster, and other ccxt-supported exchanges), integrates with CoinGecko for volume data, and allows sorting pairs by market metrics. The application uses uv for dependency management and supports different base currencies (USDT, USDC, FDUSD) and market types (spot, swap/perpetual).
+
+## Exchange Configuration
+
+Exchanges are configured in `src/sandwich/config/exchanges.py`. Each exchange has:
+- `quote`: Default quote currency (e.g., "USDT", "USDC")
+- `match_with` (optional): Exchange to match pairs against (e.g., "binance")
+
+Exchanges with `match_with` will have their pairs filtered against the specified exchange.
+
+### Adding a New Exchange
+
+1. Add the exchange to `ExchangeId` enum in `src/sandwich/domain/models.py`
+2. Add configuration to `EXCHANGE_CONFIG` in `src/sandwich/config/exchanges.py`:
+   ```python
+   "new_exchange": {
+       "quote": "USDT",
+       "match_with": "binance",  # Optional
+   },
+   ```
+
+## CLI Usage
+
+```bash
+# Fetch and get pairs from specific exchange
+uv run sandwich --base usdtperp --get-pairs --exchange binance
+
+# Fetch and get pairs from Hyperliquid (with matching against Binance)
+uv run sandwich --base usdcperp --get-pairs --exchange hyperliquid
+
+# Sort existing pairs by volume
+uv run sandwich --base usdtperp
+
+# Fetch market data from CoinGecko
+uv run sandwich --fetch
+```

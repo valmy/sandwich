@@ -16,7 +16,7 @@ def main(
     base: str = "usdtperp",
     fetch: bool = False,
     get_pairs: bool = False,
-    hyperliquid: bool = False,
+    exchange: str = typer.Option("binance", "--exchange", "-e", help="Exchange to use"),
 ) -> None:
     """
     Main CLI command.
@@ -25,49 +25,68 @@ def main(
         base: Base currency and market type (e.g., usdtperp, usdc, fdusd)
         fetch: Fetch market data from CoinGecko
         get_pairs: Get pairs from exchange
-        hyperliquid: Use Hyperliquid exchange
+        exchange: Exchange to use (binance, hyperliquid, aster, etc.)
     """
     container = DIContainer()
 
     try:
+        # Validate exchange
+        try:
+            exchange_id = ExchangeId(exchange)
+        except ValueError:
+            valid_exchanges = [e.value for e in ExchangeId]
+            raise typer.BadParameter(
+                f"Invalid exchange '{exchange}'. Valid options: {valid_exchanges}"
+            )
+
         base_currency, market_type = parse_base_and_market_type(base)
 
         logger.info(
             f"Starting: base={base_currency}, type={market_type.value}, "
-            f"fetch={fetch}, get_pairs={get_pairs}, hyperliquid={hyperliquid}"
+            f"fetch={fetch}, get_pairs={get_pairs}, exchange={exchange}"
         )
 
         if fetch:
             container.fetch_market_data_command.execute()
 
         if get_pairs:
-            if hyperliquid:
-                # Fetch from Binance and match against Hyperliquid (filter Binance pairs by Hyperliquid availability)
-                fetch_bn_cmd = container.get_fetch_pairs_command(ExchangeId.BINANCE)
-                fetch_bn_cmd.execute(base_currency, market_type)
+            from sandwich.config.exchanges import get_config
+
+            config = get_config(exchange)
+
+            if "match_with" in config:
+                # Exchange needs pair matching against another exchange
+                fetch_source_cmd = container.get_fetch_pairs_command(exchange_id)
+                fetch_source_cmd.execute(base_currency, market_type)
 
                 match_cmd = container.get_match_pairs_command()
-                match_cmd.execute(ExchangeId.BINANCE, base_currency, market_type)
+                match_cmd.execute(exchange_id, base_currency, market_type)
 
                 sort_cmd = container.get_sort_pairs_command()
                 sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=True)
             else:
-                fetch_bn_cmd = container.get_fetch_pairs_command(ExchangeId.BINANCE)
-                fetch_bn_cmd.execute(base_currency, market_type)
+                # Exchange stands alone (TradingView-supported)
+                fetch_cmd = container.get_fetch_pairs_command(exchange_id)
+                fetch_cmd.execute(base_currency, market_type)
 
                 sort_cmd = container.get_sort_pairs_command()
                 sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=False)
 
-        if hyperliquid and not get_pairs:
-            match_cmd = container.get_match_pairs_command()
-            match_cmd.execute(ExchangeId.BINANCE, base_currency, market_type)
+        # Handle pair matching without fetch (legacy use case)
+        if not get_pairs and exchange_id in [ExchangeId.HYPERLIQUID, ExchangeId.ASTER]:
+            from sandwich.config.exchanges import get_config
 
-            sort_cmd = container.get_sort_pairs_command()
-            sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=True)
+            config = get_config(exchange)
+            if "match_with" in config:
+                match_cmd = container.get_match_pairs_command()
+                match_cmd.execute(exchange_id, base_currency, market_type)
+
+                sort_cmd = container.get_sort_pairs_command()
+                sort_cmd.execute(base_currency, market_type.value, is_hyperliquid=True)
 
         logger.info(
             f"Completed: {base} Fetch: {fetch} Get Pairs: {get_pairs} "
-            f"Hyperliquid: {hyperliquid}"
+            f"Exchange: {exchange}"
         )
 
     except DataValidationError as e:

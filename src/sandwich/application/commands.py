@@ -7,6 +7,7 @@ from sandwich.repositories.market_repository import MarketRepository
 from sandwich.domain.services import PairMatcher, MarketDataSorter
 from sandwich.domain.models import ExchangeId, MarketType
 from sandwich.domain.exceptions import SandwichError
+from sandwich.config.exchanges import get_config
 
 logger = get_logger(__name__)
 
@@ -105,17 +106,20 @@ class MatchPairsCommand:
             List of matched pair symbols
         """
         try:
-            logger.info(
-                f"Matching {target_exchange_id.value} pairs against Hyperliquid"
-            )
+            config = get_config(target_exchange_id.value)
 
-            if target_exchange_id == ExchangeId.HYPERLIQUID:
-                source_base = "USDC"
-                target_base = target_base_currency
-            else:
-                # Binance pairs against Hyperliquid
+            if "match_with" in config:
+                # Exchange needs pair matching against another exchange
+                logger.info(
+                    f"Matching {target_exchange_id.value} pairs against {config['match_with']}"
+                )
                 source_base = target_base_currency
-                target_base = "USDC"
+                target_base = config["quote"]
+            else:
+                # Exchange stands alone (TradingView-supported)
+                logger.info(f"Processing {target_exchange_id.value} pairs")
+                source_base = target_base_currency
+                target_base = config["quote"]
 
             source_market_type = target_market_type
 
@@ -147,11 +151,10 @@ class MatchPairsCommand:
 
             # If target doesn't exist, fetch it from correct exchange
             if not target_pairs_ccxt:
-                target_exchange = (
-                    ExchangeId.HYPERLIQUID
-                    if target_exchange_id == ExchangeId.BINANCE
-                    else ExchangeId.BINANCE
-                )
+                if "match_with" in config:
+                    target_exchange = ExchangeId(config["match_with"])
+                else:
+                    target_exchange = ExchangeId.BINANCE
                 try:
                     exchange_client = ExchangeClient(self.settings, target_exchange)
                     fetch_cmd = FetchPairsCommand(

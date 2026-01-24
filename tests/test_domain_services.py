@@ -42,6 +42,7 @@ class TestPairMatcher:
                 quote="USDC",
                 exchange=ExchangeId.HYPERLIQUID,
                 market_type=MarketType.SWAP,
+                is_active=True,
             )
         ]
         target_pairs = [
@@ -51,6 +52,7 @@ class TestPairMatcher:
                 quote="USDT",
                 exchange=ExchangeId.BINANCE,
                 market_type=MarketType.SWAP,
+                is_active=True,
             )
         ]
 
@@ -66,6 +68,7 @@ class TestPairMatcher:
                 quote="USDT",
                 exchange=ExchangeId.BINANCE,
                 market_type=MarketType.SWAP,
+                is_active=True,
             )
         ]
         target_pairs = [
@@ -75,6 +78,7 @@ class TestPairMatcher:
                 quote="USDC",
                 exchange=ExchangeId.HYPERLIQUID,
                 market_type=MarketType.SWAP,
+                is_active=True,
             )
         ]
 

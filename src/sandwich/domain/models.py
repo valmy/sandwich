@@ -12,6 +12,7 @@ class ExchangeId(str, Enum):
     HYPERLIQUID = "hyperliquid"
     BYBIT = "bybit"
     OKX = "okx"
+    ASTER = "aster"
 
 
 class TradingPair(BaseModel):

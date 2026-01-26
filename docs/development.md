@@ -77,7 +77,7 @@ git checkout -b feature/your-feature-name
 
 ### 2. Make Changes
 
-- Follow the [Code Style Guidelines](../AGENTS.md#Code-Style-Guidelines)
+- Follow standard Python coding rules (PEP 8)
 - Write clear, concise commit messages
 - Add tests for new functionality
 
@@ -85,16 +85,16 @@ git checkout -b feature/your-feature-name
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run tests with coverage
-pytest --cov=src/sandwich tests/
+uv run pytest --cov=src/sandwich tests/
 
 # Run specific test file
-pytest tests/test_commands.py -v
+uv run pytest tests/test_commands.py -v
 
 # Run specific test function
-pytest tests/test_commands.py::test_get_pairs_command -v
+uv run pytest tests/test_commands.py::test_get_pairs_command -v
 ```
 
 ### 4. Code Quality Checks
@@ -180,7 +180,7 @@ def test_process_pairs():
 
 ```bash
 # Enable debug logging
-uv run sandwich --base usdtperp --fetch --get-pairs --verbose
+LOG_LEVEL=DEBUG uv run sandwich --base usdtperp --fetch --get-pairs
 ```
 
 ### Using VSCode Debugger

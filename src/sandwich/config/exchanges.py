@@ -1,12 +1,13 @@
 """Exchange configuration for pair matching."""
 
-from typing import TypedDict, NotRequired
+from typing import NotRequired, TypedDict
 
 from sandwich.domain.models import ExchangeId
 
 
 class ExchangeConfig(TypedDict):
     """Configuration for a single exchange."""
+
     quote: str
     match_with: NotRequired[str]
 
@@ -20,7 +21,7 @@ EXCHANGE_CONFIG: dict[str, ExchangeConfig] = {
         "match_with": "binance",
     },
     "aster": {
-        "quote": "USDC",
+        "quote": "USDT",
         "match_with": "binance",
     },
     "bybit": {

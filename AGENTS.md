@@ -4,9 +4,9 @@
 
 1. **Build**: `uv build` - builds the Python package using uv
 2. **Run the application**: `uv run sandwich [OPTIONS]` - runs the main application with available options
-3. **Run tests**: `pytest` - runs all tests in the project
-4. **Run a single test**: `pytest path/to/test_file.py -v` - runs tests from a specific file with verbose output
-5. **Run a specific test function**: `pytest path/to/test_file.py::test_function_name -v`
+3. **Run tests**: `uv run pytest` - runs all tests in the project
+4. **Run a single test**: `uv run pytest path/to/test_file.py -v` - runs tests from a specific file with verbose output
+5. **Run a specific test function**: `uv run pytest path/to/test_file.py::test_function_name -v`
 6. **Linting**: `uv run ruff check .` - runs linting checks on the codebase
 7. **Auto-fix linting issues**: `uv run ruff check . --fix` - automatically fixes linting issues where possible
 8. **Format code**: `uv run ruff format .` - formats code according to project style

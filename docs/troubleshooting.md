@@ -145,11 +145,7 @@ python --version
 
 ```bash
 # Run with debug logging
-uv run sandwich --base usdtperp --fetch --get-pairs --verbose
-
-# Or set environment variable
-export SANDWICH_LOG_LEVEL=DEBUG
-uv run sandwich --base usdtperp --fetch --get-pairs
+LOG_LEVEL=DEBUG uv run sandwich --base usdtperp --fetch --get-pairs
 ```
 
 ### 2. Check Exchange Status
@@ -172,7 +168,7 @@ python --version
 uv pip list
 
 # Run tests
-pytest -v
+uv run pytest -v
 ```
 
 ## Getting Help

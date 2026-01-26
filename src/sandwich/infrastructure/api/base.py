@@ -31,6 +31,7 @@ class BaseAPIClient:
         # Validate URL to prevent SSRF attacks
         from urllib.parse import urlparse
         import ipaddress
+        import socket
 
         parsed = urlparse(url)
         if not parsed.scheme or parsed.scheme not in ["http", "https"]:
@@ -46,39 +47,25 @@ class BaseAPIClient:
                 details="Invalid URL - missing network location"
             )
 
+        hostname = parsed.hostname or ""
         try:
-            # Check if hostname is an IP address
-            ip = ipaddress.ip_address(parsed.hostname or "")
-            if ip.is_private or ip.is_loopback or ip.is_link_local:
-                raise APIRequestError(
-                    endpoint=url,
-                    operation="validate URL",
-                    details="Access to internal networks not allowed"
-                )
+            # Try to interpret as IP address
+            ip = ipaddress.ip_address(hostname)
         except ValueError:
-            # Not an IP address, check for localhost/internal hostnames
-            hostname = (parsed.hostname or "").lower()
-            if (
-                hostname in ["localhost", "127.0.0.1", "::1"]
-                or hostname.startswith("10.")
-                or hostname.startswith("192.168.")
-                or hostname.startswith("172.16.")
-                or hostname.startswith("172.17.")
-                or hostname.startswith("172.18.")
-                or hostname.startswith("172.19.")
-                or hostname.startswith("172.20.")
-                or hostname.startswith("172.21.")
-                or hostname.startswith("172.22.")
-                or hostname.startswith("172.23.")
-                or hostname.startswith("172.24.")
-                or hostname.startswith("172.25.")
-                or hostname.startswith("172.26.")
-                or hostname.startswith("172.27.")
-                or hostname.startswith("172.28.")
-                or hostname.startswith("172.29.")
-                or hostname.startswith("172.30.")
-                or hostname.startswith("172.31.")
-            ):
+            # Not an IP address, resolve it
+            try:
+                ip_str = socket.gethostbyname(hostname)
+                ip = ipaddress.ip_address(ip_str)
+            except (socket.gaierror, ValueError):
+                # DNS resolution failed or invalid IP
+                # We'll let requests try to handle it, but log a warning if needed
+                pass
+
+        # Check if the (resolved) IP is private/local
+        # Note: 'ip' variable might be unbound if resolution failed, 
+        # but in that case we can't validate it anyway.
+        if 'ip' in locals():
+            if ip.is_private or ip.is_loopback or ip.is_link_local:
                 raise APIRequestError(
                     endpoint=url,
                     operation="validate URL",
@@ -87,7 +74,8 @@ class BaseAPIClient:
 
         for attempt in range(self.settings.max_retries):
             try:
-                response = requests.get(url, timeout=30)
+                # Disable redirects to prevent open redirect SSRF
+                response = requests.get(url, timeout=30, allow_redirects=False)
                 if response.status_code == 200:
                     return response
                 elif response.status_code == 429:

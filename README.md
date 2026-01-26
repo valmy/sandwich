@@ -138,52 +138,6 @@ Comprehensive documentation is available in the `docs/` directory:
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-```
-
-This will:
-- Fetch active USDC spot pairs from Binance
-- Fetch market data from CoinGecko
-- Sort pairs by volume
-- Save results to `sorted_usdc_spot.txt`
-
-#### 2. Process USDT Perpetual Pairs
-
-```bash
-uv run sandwich --base usdtperp --get-pairs
-```
-
-This will:
-- Fetch active USDT perpetual (swap) pairs from Binance
-- Sort using existing market data
-- Save results to `sorted_usdt_swap.txt`
-
-#### 3. Work with Hyperliquid Exchange
-
-```bash
-uv run sandwich --base usdcperp --get-pairs --exchange hyperliquid
-```
-
-This will:
-- Fetch Hyperliquid USDC perpetual pairs
-- Match them against Binance pairs
-- Save results to `sorted_usdc_swap_hype.txt`
-
-#### 4. Only Sort Existing Data
-
-```bash
-uv run sandwich --base fdusd
-```
-
-This will:
-- Skip fetching new data
-- Sort existing FDUSD pairs using saved market data
-- Save updated sorted list
-
-#### 5. Fetch Data for Custom Base Currency
-
-```bash
-uv run sandwich --base busd --fetch --get-pairs --exchange binance
-```
 
 ## Configuration
 
@@ -246,7 +200,6 @@ sandwich/
 │   ├── config/             # Configuration files
 │   ├── domain/             # Core business logic and models
 │   ├── infrastructure/     # External API and file system interactions
-│   ├── models/             # Data models (deprecated - use domain instead)
 │   └── repositories/       # Data access abstractions
 ├── tests/                  # Test files and fixtures
 ├── README.md              # Documentation

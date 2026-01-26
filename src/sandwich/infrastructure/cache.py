@@ -19,7 +19,12 @@ class CacheManager:
         self.settings = settings
         self._memory_cache: dict[str, dict] = {}
         self._cache_dir = settings.cache_dir
-        self._cache_dir.mkdir(exist_ok=True)
+        try:
+            self._cache_dir.mkdir(exist_ok=True)
+        except (OSError, PermissionError) as e:
+            logger.warning(f"Failed to create cache directory {self._cache_dir}: {e}")
+            # Disable caching if directory cannot be created
+            self.settings.cache_enabled = False
 
     def _get_cache_key(self, func: Callable, *args: Any, **kwargs: Any) -> str:
         """Generate unique cache key from function name and arguments"""
@@ -29,10 +34,13 @@ class CacheManager:
         for k, v in sorted(kwargs.items()):
             key_parts.append(f"{k}={v}")
         key_str = ":".join(key_parts)
-        return hashlib.md5(key_str.encode("utf-8")).hexdigest()
+        return hashlib.sha256(key_str.encode("utf-8")).hexdigest()
 
     def _get_file_path(self, cache_key: str) -> Path:
         """Get file path for cache entry"""
+        # Validate cache key to prevent path traversal
+        if not cache_key or not cache_key.replace('-', '').replace('_', '').isalnum():
+            raise ValueError(f"Invalid cache key: {cache_key}")
         return self._cache_dir / f"{cache_key}.json"
 
     def get(self, func: Callable, *args: Any, **kwargs: Any) -> Optional[T]:
@@ -70,6 +78,13 @@ class CacheManager:
             try:
                 with open(cache_file, "r") as f:
                     entry = json.load(f)
+
+                # Validate cache entry structure
+                if not isinstance(entry, dict) or "timestamp" not in entry or "value" not in entry:
+                    logger.warning(f"Invalid cache entry structure in {cache_file}")
+                    cache_file.unlink(missing_ok=True)
+                    return None
+
                 if time.time() - entry["timestamp"] < self.settings.cache_duration:
                     logger.debug(f"Cache hit (file) for {func.__name__}")
                     # Update memory cache
@@ -184,10 +199,10 @@ class cached:
         def wrapper(*args: Any, **kwargs: Any) -> T:
             # Try to find cache_manager in args or kwargs
             if self.cache_manager is None:
-                from sandwich.application.container import Container
-
-                container = Container()
-                self.cache_manager = container.cache_manager()
+                # Removed automatic container resolution to avoid circular imports
+                # Use dependency injection or pass cache_manager to the decorator
+                logger.debug("Cache manager not provided for @cached decorator, executing without cache")
+                return func(*args, **kwargs)
 
             # Try to get cached value
             cached_value = self.cache_manager.get(func, *args, **kwargs)

@@ -207,7 +207,8 @@ class MarketDataSorter:
             # Also handle 1000 prefix case for quick lookups
             if normalized_symbol.startswith("1000"):
                 without_prefix = normalized_symbol[4:]
-                symbol_index[without_prefix] = line
+                if without_prefix not in symbol_index:
+                    symbol_index[without_prefix] = line
         return symbol_index
 
     def find_symbol_in_index(

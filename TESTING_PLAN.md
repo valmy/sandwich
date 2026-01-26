@@ -404,22 +404,22 @@ dev = [
 ### Run Commands
 ```bash
 # All tests
-pytest
+uv run pytest
 
 # Unit tests only
-pytest -m unit
+uv run pytest -m unit
 
 # With coverage
-pytest --cov=src/sandwich --cov-report=html
+uv run pytest --cov=src/sandwich --cov-report=html
 
 # Specific test file
-pytest tests/test_binance.py
+uv run pytest tests/test_binance.py
 
 # Specific test function
-pytest tests/test_binance.py::test_get_pairs_usdt_swap
+uv run pytest tests/test_binance.py::test_get_pairs_usdt_swap
 
 # Verbose output
-pytest -v
+uv run pytest -v
 ```
 
 ---
@@ -490,7 +490,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: uv sync
-      - run: pytest --cov=src/sandwich --cov-report=xml
+      - run: uv run pytest --cov=src/sandwich --cov-report=xml
       - uses: codecov/codecov-action@v3
 ```
 

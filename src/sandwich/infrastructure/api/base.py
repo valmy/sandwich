@@ -34,44 +34,71 @@ class BaseAPIClient:
 
         parsed = urlparse(url)
         if not parsed.scheme or parsed.scheme not in ["http", "https"]:
-            raise APIRequestError("Invalid URL scheme")
+            raise APIRequestError(
+                endpoint=url,
+                operation="validate URL",
+                details="Invalid URL scheme - only HTTP/HTTPS allowed"
+            )
         if not parsed.netloc:
-            raise APIRequestError("Invalid URL")
+            raise APIRequestError(
+                endpoint=url,
+                operation="validate URL",
+                details="Invalid URL - missing network location"
+            )
 
+        hostname = parsed.hostname or ""
         try:
-            # Check if hostname is an IP address
-            ip = ipaddress.ip_address(parsed.hostname or "")
+            # Try to interpret as IP address to catch encoded formats
+            # This handles decimal, octal, hex, and other IP encodings
+            ip = ipaddress.ip_address(hostname)
+            # Check if the IP is private/local
             if ip.is_private or ip.is_loopback or ip.is_link_local:
-                raise APIRequestError("Access to internal networks not allowed")
+                raise APIRequestError(
+                    endpoint=url,
+                    operation="validate URL",
+                    details="Access to internal networks not allowed"
+                )
         except ValueError:
-            # Not an IP address, check for localhost/internal hostnames
-            hostname = (parsed.hostname or "").lower()
+            # Not a valid IP, check for dangerous hostnames
+            hostname_lower = hostname.lower()
+            if hostname_lower in ["localhost", "127.0.0.1", "::1", "0.0.0.0"]:
+                raise APIRequestError(
+                    endpoint=url,
+                    operation="validate URL",
+                    details="Access to internal networks not allowed"
+                )
+            
+            # Still check for obvious private IP prefixes in hostname as a fallback
             if (
-                hostname in ["localhost", "127.0.0.1", "::1"]
-                or hostname.startswith("10.")
-                or hostname.startswith("192.168.")
-                or hostname.startswith("172.16.")
-                or hostname.startswith("172.17.")
-                or hostname.startswith("172.18.")
-                or hostname.startswith("172.19.")
-                or hostname.startswith("172.20.")
-                or hostname.startswith("172.21.")
-                or hostname.startswith("172.22.")
-                or hostname.startswith("172.23.")
-                or hostname.startswith("172.24.")
-                or hostname.startswith("172.25.")
-                or hostname.startswith("172.26.")
-                or hostname.startswith("172.27.")
-                or hostname.startswith("172.28.")
-                or hostname.startswith("172.29.")
-                or hostname.startswith("172.30.")
-                or hostname.startswith("172.31.")
+                hostname_lower.startswith("10.")
+                or hostname_lower.startswith("192.168.")
+                or hostname_lower.startswith("172.16.")
+                or hostname_lower.startswith("172.17.")
+                or hostname_lower.startswith("172.18.")
+                or hostname_lower.startswith("172.19.")
+                or hostname_lower.startswith("172.20.")
+                or hostname_lower.startswith("172.21.")
+                or hostname_lower.startswith("172.22.")
+                or hostname_lower.startswith("172.23.")
+                or hostname_lower.startswith("172.24.")
+                or hostname_lower.startswith("172.25.")
+                or hostname_lower.startswith("172.26.")
+                or hostname_lower.startswith("172.27.")
+                or hostname_lower.startswith("172.28.")
+                or hostname_lower.startswith("172.29.")
+                or hostname_lower.startswith("172.30.")
+                or hostname_lower.startswith("172.31.")
             ):
-                raise APIRequestError("Access to internal networks not allowed")
+                raise APIRequestError(
+                    endpoint=url,
+                    operation="validate URL",
+                    details="Access to internal networks not allowed"
+                )
 
         for attempt in range(self.settings.max_retries):
             try:
-                response = requests.get(url, timeout=30)
+                # Disable redirects to prevent open redirect SSRF
+                response = requests.get(url, timeout=30, allow_redirects=False)
                 if response.status_code == 200:
                     return response
                 elif response.status_code == 429:
@@ -94,5 +121,7 @@ class BaseAPIClient:
 
         logger.error(f"Max retries ({self.settings.max_retries}) exhausted")
         raise APIRequestError(
-            f"Request failed after {self.settings.max_retries} attempts"
+            endpoint=url,
+            operation="make API request",
+            details=f"Request failed after {self.settings.max_retries} attempts"
         )

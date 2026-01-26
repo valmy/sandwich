@@ -44,4 +44,8 @@ class MarketRepository:
                 json.dump([m.model_dump() for m in market_data], f)
             logger.info(f"Saved {len(market_data)} market data items")
         except (IOError, OSError, TypeError) as e:
-            raise FileOperationError(f"Failed to save market data: {e}")
+            raise FileOperationError(
+                filename=self.settings.marketcap_file,
+                operation="save market data",
+                details=str(e)
+            )

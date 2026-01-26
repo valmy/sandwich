@@ -15,8 +15,37 @@ def pair_matcher(settings):
 
 
 @pytest.fixture
-def market_sorter(settings):
-    return MarketDataSorter(settings)
+def mock_coingecko_client():
+    from unittest.mock import Mock
+    client = Mock()
+    client.fetch_stablecoins = Mock(return_value=set())
+    return client
+
+
+@pytest.fixture
+def mock_market_repository():
+    from unittest.mock import Mock
+    repo = Mock()
+    repo.load_market_data = Mock(return_value=[])
+    return repo
+
+
+@pytest.fixture
+def mock_pair_repository():
+    from unittest.mock import Mock
+    repo = Mock()
+    repo.load_pair_lines = Mock(return_value=[])
+    return repo
+
+
+@pytest.fixture
+def market_sorter(settings, mock_coingecko_client, mock_market_repository, mock_pair_repository):
+    return MarketDataSorter(
+        settings,
+        mock_coingecko_client,
+        mock_market_repository,
+        mock_pair_repository
+    )
 
 
 @pytest.mark.unit
@@ -95,48 +124,66 @@ class TestMarketDataSorter:
         assert market_sorter.remove_prefix_suffix("BINANCE:BTCUSDT.P") == "BTCUSDT"
         assert market_sorter.remove_prefix_suffix("BTCUSDT") == "BTCUSDT"
 
-    def test_find_symbol_in_lines(self, market_sorter):
+    def test_find_symbol_in_index(self, market_sorter):
         lines = ["BINANCE:BTCUSDT.P", "BINANCE:ETHUSDT.P"]
         item = {"symbol": "BTC"}
+        symbol_index = market_sorter.create_symbol_index(lines)
 
-        line = market_sorter.find_symbol_in_lines(item, lines, "USDT", set())
+        line = market_sorter.find_symbol_in_index(item, symbol_index, "USDT", set())
         assert line == "BINANCE:BTCUSDT.P"
 
-    def test_sort_pairs_by_volume(self, market_sorter):
-        market_data = [
-            {"symbol": "ETH", "total_volume": 1000},
-            {"symbol": "BTC", "total_volume": 2000},
+    def test_sort_pairs_by_volume(self, market_sorter, mock_market_repository, mock_pair_repository):
+        # Arrange
+        from unittest.mock import Mock
+        mock_model1 = Mock()
+        mock_model1.model_dump.return_value = {"id": "bitcoin", "symbol": "btc", "total_volume": 2000}
+        mock_model2 = Mock()
+        mock_model2.model_dump.return_value = {"id": "ethereum", "symbol": "eth", "total_volume": 1000}
+        mock_market_repository.load_market_data.return_value = [mock_model1, mock_model2]
+        
+        mock_pair_repository.load_pair_lines.return_value = [
+            "BINANCE:BTCUSDT.P", 
+            "BINANCE:ETHUSDT.P"
         ]
-        lines = ["BINANCE:BTCUSDT.P", "BINANCE:ETHUSDT.P"]
 
+        # Act
         sorted_data, sorted_count, unsorted_count = market_sorter.sort_pairs_by_volume(
-            market_data, lines, "USDT", "swap"
+            "USDT", "swap"
         )
 
+        # Assert
         assert sorted_count == 2
         assert unsorted_count == 0
         assert sorted_data.startswith("BINANCE:BTCUSDT.P")  # BTC has higher volume
 
-    def test_sort_pairs_by_volume_filters_stablecoins(self, market_sorter):
-        market_data = [
-            {"symbol": "ETH", "total_volume": 1000},
-            {"symbol": "BTC", "total_volume": 2000},
-            {"symbol": "USDC", "total_volume": 5000},
-            {"symbol": "DAI", "total_volume": 3000},
-        ]
-        lines = [
+    def test_sort_pairs_by_volume_filters_stablecoins(self, market_sorter, mock_market_repository, mock_pair_repository, mock_coingecko_client):
+        # Arrange
+        from unittest.mock import Mock
+        mock_model1 = Mock()
+        mock_model1.model_dump.return_value = {"id": "bitcoin", "symbol": "btc", "total_volume": 2000}
+        mock_model2 = Mock()
+        mock_model2.model_dump.return_value = {"id": "ethereum", "symbol": "eth", "total_volume": 1000}
+        mock_model3 = Mock()
+        mock_model3.model_dump.return_value = {"id": "usdc", "symbol": "usdc", "total_volume": 5000}
+        mock_model4 = Mock()
+        mock_model4.model_dump.return_value = {"id": "dai", "symbol": "dai", "total_volume": 3000}
+        mock_market_repository.load_market_data.return_value = [mock_model1, mock_model2, mock_model3, mock_model4]
+        
+        mock_pair_repository.load_pair_lines.return_value = [
             "BINANCE:BTCUSDT.P",
             "BINANCE:ETHUSDT.P",
             "BINANCE:USDCUSDT.P",
             "BINANCE:DAIUSDT.P",
         ]
+        
+        mock_coingecko_client.fetch_stablecoins.return_value = {"USDC", "DAI", "USDT"}
 
-        stablecoins = {"USDC", "DAI", "USDT"}
+        # Act
         sorted_data, sorted_count, unsorted_count = market_sorter.sort_pairs_by_volume(
-            market_data, lines, "USDT", "swap", False, stablecoins
+            "USDT", "swap"
         )
 
-        # USDC and DAI should be filtered out
+        # Assert
         assert sorted_count == 2
         assert "BINANCE:USDCUSDT.P" not in sorted_data
         assert "BINANCE:DAIUSDT.P" not in sorted_data

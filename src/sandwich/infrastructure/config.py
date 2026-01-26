@@ -26,11 +26,26 @@ class Settings(BaseSettings):
         default=2, ge=1, le=10, description="Number of pages to fetch"
     )
 
+    # Cache settings
+    cache_enabled: bool = Field(default=True, description="Enable/disable cache")
+    cache_duration: int = Field(
+        default=86400, ge=60, le=864000, description="Cache duration in seconds"
+    )
+    cache_dir: Path = Field(
+        default=Path.cwd() / ".cache", description="Cache directory"
+    )
+
     base_currency: str = Field(default="USDT", description="Default base currency")
 
     stablecoins_file: str = Field(
         default="stablecoins.json", description="Cached stablecoins file"
     )
+
+    model_config = {
+        "env_prefix": "SANDWICH_",
+        "case_sensitive": False,
+        "extra": "forbid"
+    }
 
     EXCLUDED_CURRENCIES: ClassVar[list[str]] = ["USDC", "FDUSD", "EUR"]
     QUOTE_CURRENCIES: ClassVar[list[str]] = ["FDUSD", "USDT", "USDC"]

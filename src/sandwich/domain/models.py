@@ -13,6 +13,8 @@ class ExchangeId(str, Enum):
     BYBIT = "bybit"
     OKX = "okx"
     ASTER = "aster"
+    KUCOIN = "kucoin"
+    GATEIO = "gateio"
 
 
 class TradingPair(BaseModel):

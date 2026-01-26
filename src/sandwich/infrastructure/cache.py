@@ -28,13 +28,35 @@ class CacheManager:
 
     def _get_cache_key(self, func: Callable, *args: Any, **kwargs: Any) -> str:
         """Generate unique cache key from function name and arguments"""
-        key_parts = [func.__name__]
-        for arg in args:
-            key_parts.append(str(arg))
-        for k, v in sorted(kwargs.items()):
-            key_parts.append(f"{k}={v}")
-        key_str = ":".join(key_parts)
-        return hashlib.sha256(key_str.encode("utf-8")).hexdigest()
+        import pickle
+        
+        try:
+            # Use pickle for deterministic serialization of complex objects
+            key_parts = [func.__name__, func.__module__]
+            
+            # Serialize args and kwargs separately to prevent collision
+            if args:
+                args_bytes = pickle.dumps(args, protocol=pickle.HIGHEST_PROTOCOL)
+                key_parts.append(f"args:{args_bytes.hex()}")
+            
+            if kwargs:
+                # Sort kwargs for consistent ordering
+                sorted_kwargs = tuple(sorted(kwargs.items()))
+                kwargs_bytes = pickle.dumps(sorted_kwargs, protocol=pickle.HIGHEST_PROTOCOL)
+                key_parts.append(f"kwargs:{kwargs_bytes.hex()}")
+            
+            key_str = "|".join(key_parts)  # Use | instead of : to avoid conflicts
+            return hashlib.sha256(key_str.encode("utf-8")).hexdigest()
+        except (pickle.PicklingError, TypeError) as e:
+            # Fallback to string representation with additional safety
+            logger.warning(f"Failed to pickle cache key arguments: {e}")
+            key_parts = [func.__name__, func.__module__]
+            for i, arg in enumerate(args):
+                key_parts.append(f"arg{i}:{repr(arg)}")
+            for k, v in sorted(kwargs.items()):
+                key_parts.append(f"{k}:{repr(v)}")
+            key_str = "|".join(key_parts)
+            return hashlib.sha256(key_str.encode("utf-8")).hexdigest()
 
     def _get_file_path(self, cache_key: str) -> Path:
         """Get file path for cache entry"""

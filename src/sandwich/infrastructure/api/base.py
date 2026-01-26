@@ -48,7 +48,8 @@ class BaseAPIClient:
 
         hostname = parsed.hostname or ""
         try:
-            # Try to interpret as IP address
+            # Try to interpret as IP address to catch encoded formats
+            # This handles decimal, octal, hex, and other IP encodings
             ip = ipaddress.ip_address(hostname)
             # Check if the IP is private/local
             if ip.is_private or ip.is_loopback or ip.is_link_local:
@@ -58,11 +59,18 @@ class BaseAPIClient:
                     details="Access to internal networks not allowed"
                 )
         except ValueError:
-            # Not an IP address, check for localhost/internal hostnames
+            # Not a valid IP, check for dangerous hostnames
             hostname_lower = hostname.lower()
+            if hostname_lower in ["localhost", "127.0.0.1", "::1", "0.0.0.0"]:
+                raise APIRequestError(
+                    endpoint=url,
+                    operation="validate URL",
+                    details="Access to internal networks not allowed"
+                )
+            
+            # Still check for obvious private IP prefixes in hostname as a fallback
             if (
-                hostname_lower in ["localhost", "127.0.0.1", "::1"]
-                or hostname_lower.startswith("10.")
+                hostname_lower.startswith("10.")
                 or hostname_lower.startswith("192.168.")
                 or hostname_lower.startswith("172.16.")
                 or hostname_lower.startswith("172.17.")

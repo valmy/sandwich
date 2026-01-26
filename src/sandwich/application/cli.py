@@ -162,12 +162,16 @@ def main(
     except ValidationError as e:
         logger.error(f"Validation error: {e}")
         if output == OutputFormat.JSON:
-            typer.echo(formatter.format_error(e, "Validation failed"))
+            # Sanitize error message for JSON output to prevent information disclosure
+            safe_message = "Invalid input parameters provided"
+            typer.echo(formatter.format_error(Exception(safe_message), "Validation failed"))
         raise typer.Exit(code=1)
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         if output == OutputFormat.JSON:
-            typer.echo(formatter.format_error(e, "Operation failed"))
+            # Generic error message to prevent information disclosure
+            safe_message = "An internal error occurred"
+            typer.echo(formatter.format_error(Exception(safe_message), "Operation failed"))
         raise typer.Exit(code=1)
 
     if success_data and output == OutputFormat.JSON:

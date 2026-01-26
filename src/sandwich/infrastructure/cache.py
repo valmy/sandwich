@@ -39,9 +39,18 @@ class CacheManager:
     def _get_file_path(self, cache_key: str) -> Path:
         """Get file path for cache entry"""
         # Validate cache key to prevent path traversal
-        if not cache_key or not cache_key.replace('-', '').replace('_', '').isalnum():
+        if not cache_key or not cache_key.isalnum():
             raise ValueError(f"Invalid cache key: {cache_key}")
-        return self._cache_dir / f"{cache_key}.json"
+        
+        cache_file = self._cache_dir / f"{cache_key}.json"
+        
+        # Ensure the resolved path is within the cache directory
+        try:
+            cache_file.resolve().relative_to(self._cache_dir.resolve())
+        except ValueError:
+            raise ValueError(f"Cache file path outside cache directory: {cache_file}")
+            
+        return cache_file
 
     def get(self, func: Callable, *args: Any, **kwargs: Any) -> Optional[T]:
         """

@@ -101,6 +101,8 @@ def main(
     container = DIContainer()
     formatter = OutputFormatter(output)
 
+    success_data = None
+
     try:
         # Validate exchange
         try:
@@ -153,7 +155,6 @@ def main(
                 "get_pairs": get_pairs,
                 "message": "Operation completed successfully",
             }
-            typer.echo(formatter.format_success(success_data))
 
     except typer.BadParameter:
         # Let typer handle bad parameter errors
@@ -168,6 +169,9 @@ def main(
         if output == OutputFormat.JSON:
             typer.echo(formatter.format_error(e, "Operation failed"))
         raise typer.Exit(code=1)
+
+    if success_data and output == OutputFormat.JSON:
+        typer.echo(formatter.format_success(success_data))
 
 
 if __name__ == "__main__":

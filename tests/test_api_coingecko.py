@@ -139,7 +139,7 @@ class TestCoinGeckoClient:
 
     @patch("sandwich.infrastructure.api.coingecko.CoinGeckoClient._save_stablecoins_to_file")
     @patch("pathlib.Path.exists", return_value=True)
-    @patch("builtins.open", side_effect=Exception("Failed to read file"))
+    @patch("builtins.open", side_effect=IOError("Failed to read file"))
     def test_fetch_stablecoins_cache_read_error(self, mock_file_open, mock_exists, mock_save, settings):
         """Test fetch_stablecoins uses hardcoded list when cache file is unreadable"""
         client = CoinGeckoClient(settings)

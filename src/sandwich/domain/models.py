@@ -41,7 +41,7 @@ class MarketData(BaseModel):
     current_price: float = Field(..., ge=0, description="Current price in USD")
     total_volume: float = Field(..., ge=0, description="24h trading volume")
     market_cap: float = Field(..., ge=0, description="Market capitalization")
-    market_cap_rank: int = Field(..., ge=1, description="Market cap rank")
+    market_cap_rank: int | None = Field(None, ge=1, description="Market cap rank")
 
     @field_validator("symbol")
     @classmethod

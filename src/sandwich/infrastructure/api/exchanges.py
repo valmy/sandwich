@@ -20,7 +20,12 @@ class ExchangeClient(BaseAPIClient):
 
         try:
             exchange_class = getattr(ccxt, exchange_id.value)
-            self.exchange = exchange_class()
+            config: dict[str, Any] = {}
+            if exchange_id == ExchangeId.HYPERLIQUID:
+                # ccxt's hyperliquid spot-market parser fails on unmapped
+                # tokens; only swap listings are needed for pair matching
+                config["options"] = {"fetchMarkets": {"types": ["swap"]}}
+            self.exchange = exchange_class(config)
             logger.info(f"Initialized {exchange_id.value} exchange client")
         except AttributeError:
             raise ExchangeError(

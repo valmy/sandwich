@@ -120,14 +120,17 @@ class MatchPairsCommand:
             config = get_config(target_exchange_id.value)
 
             if "match_with" in config:
-                # Exchange needs pair matching against another exchange
+                # Exchange needs pair matching against another exchange.
+                # Source: the match_with exchange's pairs (e.g., Binance USDT
+                # perps). Target: this exchange's own listings (e.g.,
+                # Hyperliquid USDC swaps).
                 match_with_exchange = config["match_with"]
                 logger.info(
-                    f"Matching {target_exchange_id.value} pairs against {match_with_exchange}"
+                    f"Matching {match_with_exchange} pairs against "
+                    f"{target_exchange_id.value}"
                 )
-                match_with_config = get_config(match_with_exchange)
                 source_base = target_base_currency
-                target_base = match_with_config["quote"]
+                target_base = config["quote"]
             else:
                 # Exchange stands alone (TradingView-supported)
                 logger.info(f"Processing {target_exchange_id.value} pairs")
@@ -162,12 +165,9 @@ class MatchPairsCommand:
                         f"expected {target_market_type}, got {pair.market_type}"
                     )
 
-            # If target doesn't exist, fetch it from correct exchange
+            # If target doesn't exist, fetch it from the target exchange
             if not target_pairs_ccxt:
-                if "match_with" in config:
-                    target_exchange = ExchangeId(config["match_with"])
-                else:
-                    target_exchange = ExchangeId.BINANCE
+                target_exchange = target_exchange_id
                 try:
                     exchange_client = ExchangeClient(self.settings, target_exchange)
                     fetch_cmd = FetchPairsCommand(
